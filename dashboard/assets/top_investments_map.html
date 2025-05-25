@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_ee75dbe9543ca62e4b6512fcdaf725b0 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_ee75dbe9543ca62e4b6512fcdaf725b0" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_ee75dbe9543ca62e4b6512fcdaf725b0 = L.map(
+                "map_ee75dbe9543ca62e4b6512fcdaf725b0",
+                {
+                    center: [25.2048, 55.2708],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 11,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_48e1f4a836659167c0feb08d81f10643 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_48e1f4a836659167c0feb08d81f10643.addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var circle_marker_7a1b411c137c33972fd3ad869de8d1cf = L.circleMarker(
+                [24.965128944434962, 55.283361254887204],
+                {"bubblingMouseEvents": true, "color": "#ff0000ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#ff0000ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.827492800706082, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_846694fd0c7048636ccc305407740763 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_fa6c5ea7e013b628559ff166275dfaff = $(`<div id="html_fa6c5ea7e013b628559ff166275dfaff" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Thanyah Fifth</h4>                     <p><b>Investment Score:</b> 85.2</p>                     <p><b>Median Price:</b> AED 940/sqft</p>                     <p><b>1-Year Growth:</b> 19.5%</p>                     <p><b>Transaction Volume:</b> 35571</p>                 </div>                 </div>`)[0];
+                popup_846694fd0c7048636ccc305407740763.setContent(html_fa6c5ea7e013b628559ff166275dfaff);
+            
+        
+
+        circle_marker_7a1b411c137c33972fd3ad869de8d1cf.bindPopup(popup_846694fd0c7048636ccc305407740763)
+        ;
+
+        
+    
+    
+            var marker_53e80e10fab20cca20c3a36a97307ac3 = L.marker(
+                [24.965128944434962, 55.283361254887204],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_2f1d328e4ca8339b5941b8412ad6285e = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Thanyah Fifth\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_53e80e10fab20cca20c3a36a97307ac3.setIcon(div_icon_2f1d328e4ca8339b5941b8412ad6285e);
+        
+    
+                marker_53e80e10fab20cca20c3a36a97307ac3.setIcon(div_icon_2f1d328e4ca8339b5941b8412ad6285e);
+            
+    
+            var circle_marker_dec90092ff48c5dc361842d9ecad3a62 = L.circleMarker(
+                [25.24235778958499, 55.341435773100386],
+                {"bubblingMouseEvents": true, "color": "#ff0400ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#ff0400ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.8142787844625, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_56cd95ee2dcf338a90b07308ac41e123 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2bf3ed3e96ea857436dea2bba0a6d009 = $(`<div id="html_2bf3ed3e96ea857436dea2bba0a6d009" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Me'Aisem First</h4>                     <p><b>Investment Score:</b> 84.9</p>                     <p><b>Median Price:</b> AED 883/sqft</p>                     <p><b>1-Year Growth:</b> 7.1%</p>                     <p><b>Transaction Volume:</b> 19520</p>                 </div>                 </div>`)[0];
+                popup_56cd95ee2dcf338a90b07308ac41e123.setContent(html_2bf3ed3e96ea857436dea2bba0a6d009);
+            
+        
+
+        circle_marker_dec90092ff48c5dc361842d9ecad3a62.bindPopup(popup_56cd95ee2dcf338a90b07308ac41e123)
+        ;
+
+        
+    
+    
+            var marker_411cebbd8bd71c76572ef522bc4d0034 = L.marker(
+                [25.24235778958499, 55.341435773100386],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_12b7d360e22552c6692b4a2ca5eaf722 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eMe\u0027Aisem First\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_411cebbd8bd71c76572ef522bc4d0034.setIcon(div_icon_12b7d360e22552c6692b4a2ca5eaf722);
+        
+    
+                marker_411cebbd8bd71c76572ef522bc4d0034.setIcon(div_icon_12b7d360e22552c6692b4a2ca5eaf722);
+            
+    
+            var circle_marker_bde021faab3737dfefa6b8d86086a635 = L.circleMarker(
+                [25.160914267231984, 55.49657431753726],
+                {"bubblingMouseEvents": true, "color": "#ffd300ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#ffd300ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.181044450391013, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_1c3b75e572e9de6e4b73ed976756d54d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_5f68450d14515dde7fc7d178103367c2 = $(`<div id="html_5f68450d14515dde7fc7d178103367c2" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Thanayah Fourth</h4>                     <p><b>Investment Score:</b> 72.4</p>                     <p><b>Median Price:</b> AED 639/sqft</p>                     <p><b>1-Year Growth:</b> 18.9%</p>                     <p><b>Transaction Volume:</b> 15186</p>                 </div>                 </div>`)[0];
+                popup_1c3b75e572e9de6e4b73ed976756d54d.setContent(html_5f68450d14515dde7fc7d178103367c2);
+            
+        
+
+        circle_marker_bde021faab3737dfefa6b8d86086a635.bindPopup(popup_1c3b75e572e9de6e4b73ed976756d54d)
+        ;
+
+        
+    
+    
+            var marker_bb9799314c297222f5a7046fbaad834d = L.marker(
+                [25.160914267231984, 55.49657431753726],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_a36672171f9bca9ad4d9e90143f96223 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Thanayah Fourth\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_bb9799314c297222f5a7046fbaad834d.setIcon(div_icon_a36672171f9bca9ad4d9e90143f96223);
+        
+    
+                marker_bb9799314c297222f5a7046fbaad834d.setIcon(div_icon_a36672171f9bca9ad4d9e90143f96223);
+            
+    
+            var circle_marker_5f0e24571f3684789f3c95b58627a761 = L.circleMarker(
+                [25.30764610789505, 55.39336703509036],
+                {"bubblingMouseEvents": true, "color": "#48a400ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#48a400ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.33804210699733, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_29b53f46752931cf27bcf2bcb1acaf6d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_415fcd83e43b7d5b49c155088bcc4798 = $(`<div id="html_415fcd83e43b7d5b49c155088bcc4798" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Jadaf</h4>                     <p><b>Investment Score:</b> 58.4</p>                     <p><b>Median Price:</b> AED 1349/sqft</p>                     <p><b>1-Year Growth:</b> 10.7%</p>                     <p><b>Transaction Volume:</b> 8370</p>                 </div>                 </div>`)[0];
+                popup_29b53f46752931cf27bcf2bcb1acaf6d.setContent(html_415fcd83e43b7d5b49c155088bcc4798);
+            
+        
+
+        circle_marker_5f0e24571f3684789f3c95b58627a761.bindPopup(popup_29b53f46752931cf27bcf2bcb1acaf6d)
+        ;
+
+        
+    
+    
+            var marker_09e4317519d194a1b0449eb05090b4fa = L.marker(
+                [25.30764610789505, 55.39336703509036],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_c503d4e1f0805d0456a099ad0166c5e7 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Jadaf\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_09e4317519d194a1b0449eb05090b4fa.setIcon(div_icon_c503d4e1f0805d0456a099ad0166c5e7);
+        
+    
+                marker_09e4317519d194a1b0449eb05090b4fa.setIcon(div_icon_c503d4e1f0805d0456a099ad0166c5e7);
+            
+    
+            var circle_marker_1b599b0b3cc86329131682f03889eab1 = L.circleMarker(
+                [25.10729226243708, 55.41005602721377],
+                {"bubblingMouseEvents": true, "color": "#40a000ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#40a000ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.30695277006802, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_7cf27ebfaafabe7d5baeff7ad75a7c37 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_87aae832330960b90aa8f3c27b6a70c9 = $(`<div id="html_87aae832330960b90aa8f3c27b6a70c9" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Hadaeq Sheikh Mohammed Bin Rashid</h4>                     <p><b>Investment Score:</b> 58.0</p>                     <p><b>Median Price:</b> AED 1483/sqft</p>                     <p><b>1-Year Growth:</b> 7.1%</p>                     <p><b>Transaction Volume:</b> 28387</p>                 </div>                 </div>`)[0];
+                popup_7cf27ebfaafabe7d5baeff7ad75a7c37.setContent(html_87aae832330960b90aa8f3c27b6a70c9);
+            
+        
+
+        circle_marker_1b599b0b3cc86329131682f03889eab1.bindPopup(popup_7cf27ebfaafabe7d5baeff7ad75a7c37)
+        ;
+
+        
+    
+    
+            var marker_fd4fa4189d09fff92426ee1789593bed = L.marker(
+                [25.10729226243708, 55.41005602721377],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_2a07bebcecc2db8f3fe221efb5865416 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eHadaeq Sheikh Mohammed Bin Rashid\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_fd4fa4189d09fff92426ee1789593bed.setIcon(div_icon_2a07bebcecc2db8f3fe221efb5865416);
+        
+    
+                marker_fd4fa4189d09fff92426ee1789593bed.setIcon(div_icon_2a07bebcecc2db8f3fe221efb5865416);
+            
+    
+            var circle_marker_272fa0a305ea555d56a6b9fbeb19aebb = L.circleMarker(
+                [25.1124, 55.1392],
+                {"bubblingMouseEvents": true, "color": "#2b9600ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#2b9600ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.21817375572897, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_91fac8a3801fff1ba4798270727ee7ec = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_07e622702a5b535cd014e0710f89f8d6 = $(`<div id="html_07e622702a5b535cd014e0710f89f8d6" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Palm Jumeirah</h4>                     <p><b>Investment Score:</b> 56.7</p>                     <p><b>Median Price:</b> AED 1883/sqft</p>                     <p><b>1-Year Growth:</b> -5.9%</p>                     <p><b>Transaction Volume:</b> 20456</p>                 </div>                 </div>`)[0];
+                popup_91fac8a3801fff1ba4798270727ee7ec.setContent(html_07e622702a5b535cd014e0710f89f8d6);
+            
+        
+
+        circle_marker_272fa0a305ea555d56a6b9fbeb19aebb.bindPopup(popup_91fac8a3801fff1ba4798270727ee7ec)
+        ;
+
+        
+    
+    
+            var marker_37cf3499b1bef12cd003a9a3b61a6ba9 = L.marker(
+                [25.1124, 55.1392],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_8597450d9a7454c26d3b8fa5632edb95 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003ePalm Jumeirah\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_37cf3499b1bef12cd003a9a3b61a6ba9.setIcon(div_icon_8597450d9a7454c26d3b8fa5632edb95);
+        
+    
+                marker_37cf3499b1bef12cd003a9a3b61a6ba9.setIcon(div_icon_8597450d9a7454c26d3b8fa5632edb95);
+            
+    
+            var circle_marker_c2a52ade1f296c52588c10521087dd02 = L.circleMarker(
+                [25.204800199019232, 55.42079999999987],
+                {"bubblingMouseEvents": true, "color": "#209000ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#209000ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.171764197997366, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_2e00c1a540d063b4dfa2b2f7bcbae44a = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_1229de55816b3dd5f106829965279f0c = $(`<div id="html_1229de55816b3dd5f106829965279f0c" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Hebiah Third</h4>                     <p><b>Investment Score:</b> 56.0</p>                     <p><b>Median Price:</b> AED 1059/sqft</p>                     <p><b>1-Year Growth:</b> 7.5%</p>                     <p><b>Transaction Volume:</b> 8205</p>                 </div>                 </div>`)[0];
+                popup_2e00c1a540d063b4dfa2b2f7bcbae44a.setContent(html_1229de55816b3dd5f106829965279f0c);
+            
+        
+
+        circle_marker_c2a52ade1f296c52588c10521087dd02.bindPopup(popup_2e00c1a540d063b4dfa2b2f7bcbae44a)
+        ;
+
+        
+    
+    
+            var marker_17d3cbd7430ccb4609baf55a43a22c43 = L.marker(
+                [25.204800199019232, 55.42079999999987],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_39c859df87bfdd768a185cbaf5e06ff5 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Hebiah Third\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_17d3cbd7430ccb4609baf55a43a22c43.setIcon(div_icon_39c859df87bfdd768a185cbaf5e06ff5);
+        
+    
+                marker_17d3cbd7430ccb4609baf55a43a22c43.setIcon(div_icon_39c859df87bfdd768a185cbaf5e06ff5);
+            
+    
+            var circle_marker_2c7455d0da2aa7ae2849065d10e0f485 = L.circleMarker(
+                [25.2813043863389, 55.29418971720454],
+                {"bubblingMouseEvents": true, "color": "#068300ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#068300ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.059027403234484, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_be6d5ff0bf7a4156433ecfd5ec33e4db = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_23f236a725a88006e6ecd43fcfbf3e3e = $(`<div id="html_23f236a725a88006e6ecd43fcfbf3e3e" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Wasl</h4>                     <p><b>Investment Score:</b> 54.4</p>                     <p><b>Median Price:</b> AED 1844/sqft</p>                     <p><b>1-Year Growth:</b> -12.5%</p>                     <p><b>Transaction Volume:</b> 7861</p>                 </div>                 </div>`)[0];
+                popup_be6d5ff0bf7a4156433ecfd5ec33e4db.setContent(html_23f236a725a88006e6ecd43fcfbf3e3e);
+            
+        
+
+        circle_marker_2c7455d0da2aa7ae2849065d10e0f485.bindPopup(popup_be6d5ff0bf7a4156433ecfd5ec33e4db)
+        ;
+
+        
+    
+    
+            var marker_b4294d0fbbdf60b7f19eb83785d59af3 = L.marker(
+                [25.2813043863389, 55.29418971720454],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_a361950c773939c546da1cc09a4e97e0 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Wasl\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_b4294d0fbbdf60b7f19eb83785d59af3.setIcon(div_icon_a361950c773939c546da1cc09a4e97e0);
+        
+    
+                marker_b4294d0fbbdf60b7f19eb83785d59af3.setIcon(div_icon_a361950c773939c546da1cc09a4e97e0);
+            
+    
+            var circle_marker_bfe466475da8117f865d84aa802e4bf5 = L.circleMarker(
+                [25.1865, 55.2802],
+                {"bubblingMouseEvents": true, "color": "#006a2bff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#006a2bff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.830682340038441, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_846421d3c1745091ffad63539c4f8f18 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_6ed1c4d8063489a55b8a1e1c1dff446f = $(`<div id="html_6ed1c4d8063489a55b8a1e1c1dff446f" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Business Bay</h4>                     <p><b>Investment Score:</b> 51.3</p>                     <p><b>Median Price:</b> AED 1463/sqft</p>                     <p><b>1-Year Growth:</b> 1.6%</p>                     <p><b>Transaction Volume:</b> 50924</p>                 </div>                 </div>`)[0];
+                popup_846421d3c1745091ffad63539c4f8f18.setContent(html_6ed1c4d8063489a55b8a1e1c1dff446f);
+            
+        
+
+        circle_marker_bfe466475da8117f865d84aa802e4bf5.bindPopup(popup_846421d3c1745091ffad63539c4f8f18)
+        ;
+
+        
+    
+    
+            var marker_880f165c0b590ac1360114cf4e97b56b = L.marker(
+                [25.1865, 55.2802],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_71710ed44a7da939c8a7b7c00e9dac14 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eBusiness Bay\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_880f165c0b590ac1360114cf4e97b56b.setIcon(div_icon_71710ed44a7da939c8a7b7c00e9dac14);
+        
+    
+                marker_880f165c0b590ac1360114cf4e97b56b.setIcon(div_icon_71710ed44a7da939c8a7b7c00e9dac14);
+            
+    
+            var circle_marker_9a26ef1cc8b8436574ab2a00625f49b2 = L.circleMarker(
+                [25.1878652109758, 55.20287936307199],
+                {"bubblingMouseEvents": true, "color": "#006536ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#006536ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.780968511955168, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_179a45c8b99c0243b2ae7bbb5e59b7e4 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_95567827dddfe923ef13117325ac8702 = $(`<div id="html_95567827dddfe923ef13117325ac8702" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Marsa Dubai</h4>                     <p><b>Investment Score:</b> 50.7</p>                     <p><b>Median Price:</b> AED 1431/sqft</p>                     <p><b>1-Year Growth:</b> 5.3%</p>                     <p><b>Transaction Volume:</b> 68486</p>                 </div>                 </div>`)[0];
+                popup_179a45c8b99c0243b2ae7bbb5e59b7e4.setContent(html_95567827dddfe923ef13117325ac8702);
+            
+        
+
+        circle_marker_9a26ef1cc8b8436574ab2a00625f49b2.bindPopup(popup_179a45c8b99c0243b2ae7bbb5e59b7e4)
+        ;
+
+        
+    
+    
+            var marker_10462c3c8f7ced35c71f55124fede867 = L.marker(
+                [25.1878652109758, 55.20287936307199],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_23770abe05104bd250340a81ab4d4411 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eMarsa Dubai\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_10462c3c8f7ced35c71f55124fede867.setIcon(div_icon_23770abe05104bd250340a81ab4d4411);
+        
+    
+                marker_10462c3c8f7ced35c71f55124fede867.setIcon(div_icon_23770abe05104bd250340a81ab4d4411);
+            
+    
+            var circle_marker_568868d4c6ca6d4849e690b242b064db = L.circleMarker(
+                [25.181506420507272, 55.35773336042289],
+                {"bubblingMouseEvents": true, "color": "#00505fff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#00505fff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.580509972964528, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_4e16082d25431253cfda2602328505de = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_82a88c3228c48c0e44258a3cf62ceab5 = $(`<div id="html_82a88c3228c48c0e44258a3cf62ceab5" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Yelayiss 1</h4>                     <p><b>Investment Score:</b> 48.2</p>                     <p><b>Median Price:</b> AED 606/sqft</p>                     <p><b>1-Year Growth:</b> 6.7%</p>                     <p><b>Transaction Volume:</b> 10043</p>                 </div>                 </div>`)[0];
+                popup_4e16082d25431253cfda2602328505de.setContent(html_82a88c3228c48c0e44258a3cf62ceab5);
+            
+        
+
+        circle_marker_568868d4c6ca6d4849e690b242b064db.bindPopup(popup_4e16082d25431253cfda2602328505de)
+        ;
+
+        
+    
+    
+            var marker_b34a6ca7ddc2afab0641b03ee974135d = L.marker(
+                [25.181506420507272, 55.35773336042289],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_005976814de1dfda32f367516e0e41b6 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Yelayiss 1\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_b34a6ca7ddc2afab0641b03ee974135d.setIcon(div_icon_005976814de1dfda32f367516e0e41b6);
+        
+    
+                marker_b34a6ca7ddc2afab0641b03ee974135d.setIcon(div_icon_005976814de1dfda32f367516e0e41b6);
+            
+    
+            var circle_marker_bd6de8fb9f485bbd1d269eebf6dc9de5 = L.circleMarker(
+                [25.284610302868103, 55.420901017838325],
+                {"bubblingMouseEvents": true, "color": "#00388eff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#00388eff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.34099554708986, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_6c2aadda12e0d5aeb8c79064511ac678 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_6095495316deced60b9f32fbf9b94b17 = $(`<div id="html_6095495316deced60b9f32fbf9b94b17" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Khairan First</h4>                     <p><b>Investment Score:</b> 45.3</p>                     <p><b>Median Price:</b> AED 1742/sqft</p>                     <p><b>1-Year Growth:</b> -1.1%</p>                     <p><b>Transaction Volume:</b> 20916</p>                 </div>                 </div>`)[0];
+                popup_6c2aadda12e0d5aeb8c79064511ac678.setContent(html_6095495316deced60b9f32fbf9b94b17);
+            
+        
+
+        circle_marker_bd6de8fb9f485bbd1d269eebf6dc9de5.bindPopup(popup_6c2aadda12e0d5aeb8c79064511ac678)
+        ;
+
+        
+    
+    
+            var marker_67c3a9a28bb058590464c6cfd58103d3 = L.marker(
+                [25.284610302868103, 55.420901017838325],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_bf3bbf993886c193d48f69065160d7c5 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Khairan First\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_67c3a9a28bb058590464c6cfd58103d3.setIcon(div_icon_bf3bbf993886c193d48f69065160d7c5);
+        
+    
+                marker_67c3a9a28bb058590464c6cfd58103d3.setIcon(div_icon_bf3bbf993886c193d48f69065160d7c5);
+            
+    
+            var circle_marker_27adfb5ccfea216c1b5ccc3ecd11984e = L.circleMarker(
+                [25.15329634541075, 55.35651682194267],
+                {"bubblingMouseEvents": true, "color": "#002aacff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#002aacff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.182060100603838, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_0e22ac85d88e2e6ddac2fddd1615c00a = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f1d540505e8abeeca1c9d935b831928d = $(`<div id="html_f1d540505e8abeeca1c9d935b831928d" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Yelayiss 2</h4>                     <p><b>Investment Score:</b> 43.5</p>                     <p><b>Median Price:</b> AED 878/sqft</p>                     <p><b>1-Year Growth:</b> -3.0%</p>                     <p><b>Transaction Volume:</b> 19794</p>                 </div>                 </div>`)[0];
+                popup_0e22ac85d88e2e6ddac2fddd1615c00a.setContent(html_f1d540505e8abeeca1c9d935b831928d);
+            
+        
+
+        circle_marker_27adfb5ccfea216c1b5ccc3ecd11984e.bindPopup(popup_0e22ac85d88e2e6ddac2fddd1615c00a)
+        ;
+
+        
+    
+    
+            var marker_14853b8120201d2b99785fd533618773 = L.marker(
+                [25.15329634541075, 55.35651682194267],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_2b7fbd4815a5dc866b12d39eb7a9ca4a = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Yelayiss 2\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_14853b8120201d2b99785fd533618773.setIcon(div_icon_2b7fbd4815a5dc866b12d39eb7a9ca4a);
+        
+    
+                marker_14853b8120201d2b99785fd533618773.setIcon(div_icon_2b7fbd4815a5dc866b12d39eb7a9ca4a);
+            
+    
+            var circle_marker_14f0a4b97c760bf187181ac5d9a6ca81 = L.circleMarker(
+                [25.09787933997753, 55.32527910113392],
+                {"bubblingMouseEvents": true, "color": "#0025b5ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0025b5ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.131133703699927, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_6c136fb92607bb71358e23948a781a2f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_264b1398679edcb53847852c45e21618 = $(`<div id="html_264b1398679edcb53847852c45e21618" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Hebiah Fourth</h4>                     <p><b>Investment Score:</b> 42.9</p>                     <p><b>Median Price:</b> AED 756/sqft</p>                     <p><b>1-Year Growth:</b> 11.5%</p>                     <p><b>Transaction Volume:</b> 30506</p>                 </div>                 </div>`)[0];
+                popup_6c136fb92607bb71358e23948a781a2f.setContent(html_264b1398679edcb53847852c45e21618);
+            
+        
+
+        circle_marker_14f0a4b97c760bf187181ac5d9a6ca81.bindPopup(popup_6c136fb92607bb71358e23948a781a2f)
+        ;
+
+        
+    
+    
+            var marker_42a3f1e55dc9701b99694c3d71c46f42 = L.marker(
+                [25.09787933997753, 55.32527910113392],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_39d3937285b7da5159ef1a9744a1c6a6 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Hebiah Fourth\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_42a3f1e55dc9701b99694c3d71c46f42.setIcon(div_icon_39d3937285b7da5159ef1a9744a1c6a6);
+        
+    
+                marker_42a3f1e55dc9701b99694c3d71c46f42.setIcon(div_icon_39d3937285b7da5159ef1a9744a1c6a6);
+            
+    
+            var circle_marker_4487c4bd70f8aac09501efa14151bf99 = L.circleMarker(
+                [25.26247570565725, 55.28733822774478],
+                {"bubblingMouseEvents": true, "color": "#0023b9ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0023b9ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.111067758376649, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_ccb200f09c2cd3d19908741442b89238 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7a86f9e4963211cc5ad50c8326b00ff6 = $(`<div id="html_7a86f9e4963211cc5ad50c8326b00ff6" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Zaabeel Second</h4>                     <p><b>Investment Score:</b> 42.7</p>                     <p><b>Median Price:</b> AED 1976/sqft</p>                     <p><b>1-Year Growth:</b> 7.5%</p>                     <p><b>Transaction Volume:</b> 3966</p>                 </div>                 </div>`)[0];
+                popup_ccb200f09c2cd3d19908741442b89238.setContent(html_7a86f9e4963211cc5ad50c8326b00ff6);
+            
+        
+
+        circle_marker_4487c4bd70f8aac09501efa14151bf99.bindPopup(popup_ccb200f09c2cd3d19908741442b89238)
+        ;
+
+        
+    
+    
+            var marker_5637675ba9dc3995a7dfae56d14378a0 = L.marker(
+                [25.26247570565725, 55.28733822774478],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_b82ed9c27e43d5ddebe309fd839b631e = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eZaabeel Second\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_5637675ba9dc3995a7dfae56d14378a0.setIcon(div_icon_b82ed9c27e43d5ddebe309fd839b631e);
+        
+    
+                marker_5637675ba9dc3995a7dfae56d14378a0.setIcon(div_icon_b82ed9c27e43d5ddebe309fd839b631e);
+            
+    
+            var circle_marker_028425d1e6c19ccf39155995864ab3a3 = L.circleMarker(
+                [25.260430919276764, 55.248323327194136],
+                {"bubblingMouseEvents": true, "color": "#0021bcff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0021bcff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.090476688790126, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_c082cd48f80a609e66dcfc80cfe0bc1c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_a3b3d804a467ede332b1bf6a91251380 = $(`<div id="html_a3b3d804a467ede332b1bf6a91251380" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Barsha South Fourth</h4>                     <p><b>Investment Score:</b> 42.5</p>                     <p><b>Median Price:</b> AED 852/sqft</p>                     <p><b>1-Year Growth:</b> 2.6%</p>                     <p><b>Transaction Volume:</b> 67169</p>                 </div>                 </div>`)[0];
+                popup_c082cd48f80a609e66dcfc80cfe0bc1c.setContent(html_a3b3d804a467ede332b1bf6a91251380);
+            
+        
+
+        circle_marker_028425d1e6c19ccf39155995864ab3a3.bindPopup(popup_c082cd48f80a609e66dcfc80cfe0bc1c)
+        ;
+
+        
+    
+    
+            var marker_4eefe513784d297b0673ad7dc8b3f3d9 = L.marker(
+                [25.260430919276764, 55.248323327194136],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_cc05d7133466245695abed4ec8c47c96 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Barsha South Fourth\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_4eefe513784d297b0673ad7dc8b3f3d9.setIcon(div_icon_cc05d7133466245695abed4ec8c47c96);
+        
+    
+                marker_4eefe513784d297b0673ad7dc8b3f3d9.setIcon(div_icon_cc05d7133466245695abed4ec8c47c96);
+            
+    
+            var circle_marker_7de1b16339b78dc4c1f7eb0de763aa36 = L.circleMarker(
+                [25.19799650367694, 55.40062184884596],
+                {"bubblingMouseEvents": true, "color": "#001bc8ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#001bc8ff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 15.02369528945662, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_ac8a3de56ad93e33b5f63355f18d5e29 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f78596bad744d08bee36ddad90f4087b = $(`<div id="html_f78596bad744d08bee36ddad90f4087b" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Burj Khalifa</h4>                     <p><b>Investment Score:</b> 41.8</p>                     <p><b>Median Price:</b> AED 2024/sqft</p>                     <p><b>1-Year Growth:</b> 0.3%</p>                     <p><b>Transaction Volume:</b> 37187</p>                 </div>                 </div>`)[0];
+                popup_ac8a3de56ad93e33b5f63355f18d5e29.setContent(html_f78596bad744d08bee36ddad90f4087b);
+            
+        
+
+        circle_marker_7de1b16339b78dc4c1f7eb0de763aa36.bindPopup(popup_ac8a3de56ad93e33b5f63355f18d5e29)
+        ;
+
+        
+    
+    
+            var marker_16f98358faecb78e6fef16d4462a2b4b = L.marker(
+                [25.19799650367694, 55.40062184884596],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_b723e57565db8c07a55b019bfa49370a = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eBurj Khalifa\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_16f98358faecb78e6fef16d4462a2b4b.setIcon(div_icon_b723e57565db8c07a55b019bfa49370a);
+        
+    
+                marker_16f98358faecb78e6fef16d4462a2b4b.setIcon(div_icon_b723e57565db8c07a55b019bfa49370a);
+            
+    
+            var circle_marker_596919217bbae022f7c8fb8a5127780f = L.circleMarker(
+                [25.180425361661243, 55.072290864175336],
+                {"bubblingMouseEvents": true, "color": "#0008efff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0008efff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 14.797581929153566, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_c293441c9427ff0d5fa02792928104e1 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_706d72b32f1f15f1013275d36002e1c4 = $(`<div id="html_706d72b32f1f15f1013275d36002e1c4" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Wadi Al Safa 5</h4>                     <p><b>Investment Score:</b> 39.4</p>                     <p><b>Median Price:</b> AED 842/sqft</p>                     <p><b>1-Year Growth:</b> -0.2%</p>                     <p><b>Transaction Volume:</b> 31959</p>                 </div>                 </div>`)[0];
+                popup_c293441c9427ff0d5fa02792928104e1.setContent(html_706d72b32f1f15f1013275d36002e1c4);
+            
+        
+
+        circle_marker_596919217bbae022f7c8fb8a5127780f.bindPopup(popup_c293441c9427ff0d5fa02792928104e1)
+        ;
+
+        
+    
+    
+            var marker_1eb14c2bc6b97bffe543fbbed30c67c4 = L.marker(
+                [25.180425361661243, 55.072290864175336],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_b54ad2904f6d75ad5f854ed62fbf10ea = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eWadi Al Safa 5\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_1eb14c2bc6b97bffe543fbbed30c67c4.setIcon(div_icon_b54ad2904f6d75ad5f854ed62fbf10ea);
+        
+    
+                marker_1eb14c2bc6b97bffe543fbbed30c67c4.setIcon(div_icon_b54ad2904f6d75ad5f854ed62fbf10ea);
+            
+    
+            var circle_marker_4c73ffbad530862f1c569dc425d582dd = L.circleMarker(
+                [25.26145376984496, 55.17651134552687],
+                {"bubblingMouseEvents": true, "color": "#0002fbff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0002fbff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 14.720841437847877, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_dcdfaad4eb4617422dd9587e5da4f472 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_f5ec6f8793d9da94fee611780f06d5e2 = $(`<div id="html_f5ec6f8793d9da94fee611780f06d5e2" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Al Hebiah First</h4>                     <p><b>Investment Score:</b> 38.7</p>                     <p><b>Median Price:</b> AED 966/sqft</p>                     <p><b>1-Year Growth:</b> -4.0%</p>                     <p><b>Transaction Volume:</b> 2890</p>                 </div>                 </div>`)[0];
+                popup_dcdfaad4eb4617422dd9587e5da4f472.setContent(html_f5ec6f8793d9da94fee611780f06d5e2);
+            
+        
+
+        circle_marker_4c73ffbad530862f1c569dc425d582dd.bindPopup(popup_dcdfaad4eb4617422dd9587e5da4f472)
+        ;
+
+        
+    
+    
+            var marker_50397cff71a69fe1f483ea0bc0293194 = L.marker(
+                [25.26145376984496, 55.17651134552687],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_0a01435b4aea665d5f2a256480d8f6c8 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eAl Hebiah First\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_50397cff71a69fe1f483ea0bc0293194.setIcon(div_icon_0a01435b4aea665d5f2a256480d8f6c8);
+        
+    
+                marker_50397cff71a69fe1f483ea0bc0293194.setIcon(div_icon_0a01435b4aea665d5f2a256480d8f6c8);
+            
+    
+            var circle_marker_4005ffa5c5fbadc0106382e0e99bc077 = L.circleMarker(
+                [25.380499884428918, 55.403199209256194],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.7, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 14.694527991584781, "stroke": true, "weight": 3}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+        var popup_cce93ff8f0869ccb3b2210fde7785846 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_a9a9196a5bebf2ea03e40a45149c61a3 = $(`<div id="html_a9a9196a5bebf2ea03e40a45149c61a3" style="width: 100.0%; height: 100.0%;">                 <div style="width:250px">                     <h4>Wadi Al Safa 7</h4>                     <p><b>Investment Score:</b> 38.4</p>                     <p><b>Median Price:</b> AED 810/sqft</p>                     <p><b>1-Year Growth:</b> -14.1%</p>                     <p><b>Transaction Volume:</b> 9266</p>                 </div>                 </div>`)[0];
+                popup_cce93ff8f0869ccb3b2210fde7785846.setContent(html_a9a9196a5bebf2ea03e40a45149c61a3);
+            
+        
+
+        circle_marker_4005ffa5c5fbadc0106382e0e99bc077.bindPopup(popup_cce93ff8f0869ccb3b2210fde7785846)
+        ;
+
+        
+    
+    
+            var marker_e7fc3f2b264e4345436b79691aea119e = L.marker(
+                [25.380499884428918, 55.403199209256194],
+                {
+}
+            ).addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+        
+    
+            var div_icon_da669239fd778ee4d08d64148ba64c04 = L.divIcon({
+  "html": "\u003cdiv style=\"font-size: 10pt; font-weight: bold; color: black; background-color: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px;\"\u003eWadi Al Safa 7\u003c/div\u003e",
+  "iconSize": [150, 36],
+  "iconAnchor": [75, 0],
+  "className": "empty",
+});
+            marker_e7fc3f2b264e4345436b79691aea119e.setIcon(div_icon_da669239fd778ee4d08d64148ba64c04);
+        
+    
+                marker_e7fc3f2b264e4345436b79691aea119e.setIcon(div_icon_da669239fd778ee4d08d64148ba64c04);
+            
+    
+    var color_map_34cbfd7584ca6eebb54acb1188418c76 = {};
+
+    
+    color_map_34cbfd7584ca6eebb54acb1188418c76.color = d3.scale.threshold()
+              .domain([38.39472790749629, 38.488561122745224, 38.58239433799416, 38.676227553243095, 38.77006076849202, 38.86389398374096, 38.95772719898989, 39.05156041423883, 39.145393629487764, 39.2392268447367, 39.333060059985634, 39.42689327523456, 39.5207264904835, 39.61455970573243, 39.70839292098137, 39.8022261362303, 39.89605935147924, 39.98989256672817, 40.0837257819771, 40.177558997226036, 40.27139221247497, 40.36522542772391, 40.45905864297284, 40.55289185822178, 40.64672507347071, 40.74055828871964, 40.834391503968575, 40.92822471921751, 41.022057934466446, 41.11589114971538, 41.209724364964316, 41.30355758021325, 41.39739079546219, 41.491224010711115, 41.58505722596005, 41.678890441208985, 41.77272365645792, 41.866556871706855, 41.96039008695579, 42.054223302204726, 42.148056517453654, 42.24188973270259, 42.335722947951524, 42.42955616320046, 42.523389378449394, 42.61722259369833, 42.711055808947265, 42.8048890241962, 42.89872223944513, 42.99255545469406, 43.086388669943, 43.18022188519193, 43.27405510044087, 43.3678883156898, 43.46172153093873, 43.55555474618767, 43.6493879614366, 43.74322117668554, 43.83705439193447, 43.93088760718341, 44.02472082243234, 44.11855403768128, 44.212387252930206, 44.30622046817914, 44.40005368342808, 44.49388689867701, 44.58772011392595, 44.681553329174875, 44.77538654442381, 44.869219759672745, 44.96305297492168, 45.056886190170616, 45.15071940541955, 45.244552620668486, 45.33838583591742, 45.432219051166356, 45.526052266415284, 45.61988548166422, 45.713718696913155, 45.80755191216209, 45.901385127411025, 45.99521834265996, 46.08905155790889, 46.182884773157824, 46.27671798840676, 46.370551203655694, 46.46438441890463, 46.558217634153564, 46.6520508494025, 46.745884064651435, 46.83971727990036, 46.9335504951493, 47.02738371039823, 47.12121692564717, 47.2150501408961, 47.30888335614504, 47.402716571393974, 47.4965497866429, 47.59038300189184, 47.68421621714077, 47.77804943238971, 47.87188264763864, 47.96571586288758, 48.05954907813651, 48.15338229338545, 48.24721550863438, 48.34104872388331, 48.43488193913225, 48.52871515438118, 48.62254836963012, 48.716381584879045, 48.81021480012798, 48.904048015376915, 48.99788123062585, 49.091714445874786, 49.18554766112372, 49.279380876372656, 49.37321409162159, 49.467047306870526, 49.560880522119454, 49.65471373736839, 49.748546952617325, 49.84238016786626, 49.936213383115195, 50.03004659836412, 50.12387981361306, 50.21771302886199, 50.31154624411093, 50.405379459359864, 50.4992126746088, 50.593045889857734, 50.68687910510667, 50.780712320355605, 50.87454553560453, 50.96837875085347, 51.0622119661024, 51.15604518135134, 51.24987839660027, 51.34371161184921, 51.43754482709814, 51.53137804234707, 51.62521125759601, 51.71904447284494, 51.81287768809388, 51.90671090334281, 52.00054411859175, 52.09437733384068, 52.18821054908962, 52.282043764338546, 52.37587697958748, 52.469710194836416, 52.56354341008535, 52.65737662533428, 52.751209840583215, 52.84504305583215, 52.938876271081085, 53.03270948633002, 53.126542701578956, 53.22037591682789, 53.314209132076826, 53.40804234732576, 53.50187556257469, 53.595708777823624, 53.68954199307256, 53.783375208321495, 53.87720842357043, 53.971041638819365, 54.0648748540683, 54.15870806931723, 54.25254128456616, 54.3463744998151, 54.440207715064034, 54.53404093031297, 54.627874145561904, 54.72170736081084, 54.81554057605977, 54.9093737913087, 55.00320700655764, 55.09704022180657, 55.19087343705551, 55.284706652304436, 55.37853986755337, 55.47237308280231, 55.56620629805124, 55.66003951330018, 55.75387272854911, 55.84770594379805, 55.94153915904698, 56.03537237429592, 56.12920558954485, 56.22303880479379, 56.31687202004272, 56.41070523529166, 56.50453845054058, 56.598371665789514, 56.69220488103845, 56.786038096287385, 56.87987131153632, 56.973704526785255, 57.06753774203419, 57.161370957283125, 57.25520417253206, 57.349037387780996, 57.44287060302993, 57.536703818278866, 57.6305370335278, 57.72437024877673, 57.818203464025665, 57.9120366792746, 58.005869894523535, 58.09970310977247, 58.1935363250214, 58.28736954027033, 58.38120275551927, 58.475035970768204, 58.56886918601714, 58.662702401266074, 58.75653561651501, 58.850368831763944, 58.94420204701288, 59.03803526226181, 59.13186847751074, 59.22570169275968, 59.31953490800861, 59.41336812325754, 59.507201338506476, 59.60103455375541, 59.69486776900435, 59.78870098425328, 59.88253419950222, 59.97636741475115, 60.07020063000009, 60.16403384524902, 60.25786706049795, 60.351700275746886, 60.44553349099582, 60.539366706244756, 60.633199921493684, 60.72703313674262, 60.820866351991555, 60.91469956724049, 61.008532782489425, 61.10236599773836, 61.196199212987295, 61.29003242823623, 61.383865643485166, 61.4776988587341, 61.57153207398303, 61.665365289231964, 61.7591985044809, 61.853031719729834, 61.94686493497876, 62.0406981502277, 62.13453136547663, 62.22836458072557, 62.3221977959745, 62.41603101122344, 62.509864226472374, 62.60369744172131, 62.697530656970244, 62.79136387221918, 62.885197087468114, 62.97903030271705, 63.072863517965985, 63.16669673321491, 63.26052994846385, 63.354363163712776, 63.44819637896171, 63.542029594210646, 63.63586280945958, 63.72969602470852, 63.82352923995745, 63.91736245520639, 64.01119567045532, 64.10502888570426, 64.19886210095319, 64.29269531620213, 64.38652853145106, 64.4803617467, 64.57419496194893, 64.66802817719787, 64.7618613924468, 64.85569460769572, 64.94952782294466, 65.0433610381936, 65.13719425344253, 65.23102746869147, 65.3248606839404, 65.41869389918934, 65.51252711443827, 65.60636032968719, 65.70019354493613, 65.79402676018506, 65.887859975434, 65.98169319068293, 66.07552640593187, 66.1693596211808, 66.26319283642974, 66.35702605167867, 66.45085926692761, 66.54469248217654, 66.63852569742548, 66.73235891267441, 66.82619212792335, 66.92002534317228, 67.01385855842122, 67.10769177367015, 67.20152498891909, 67.29535820416801, 67.38919141941695, 67.48302463466588, 67.57685784991482, 67.67069106516375, 67.76452428041269, 67.85835749566162, 67.95219071091056, 68.04602392615949, 68.13985714140843, 68.23369035665736, 68.3275235719063, 68.42135678715522, 68.51519000240415, 68.60902321765309, 68.70285643290202, 68.79668964815096, 68.8905228633999, 68.98435607864883, 69.07818929389776, 69.1720225091467, 69.26585572439564, 69.35968893964457, 69.4535221548935, 69.54735537014244, 69.64118858539138, 69.73502180064031, 69.82885501588925, 69.92268823113818, 70.01652144638712, 70.11035466163605, 70.20418787688497, 70.29802109213391, 70.39185430738284, 70.48568752263178, 70.57952073788071, 70.67335395312965, 70.76718716837858, 70.8610203836275, 70.95485359887644, 71.04868681412538, 71.14252002937431, 71.23635324462325, 71.33018645987218, 71.42401967512112, 71.51785289037005, 71.61168610561899, 71.70551932086792, 71.79935253611686, 71.89318575136579, 71.98701896661473, 72.08085218186366, 72.1746853971126, 72.26851861236153, 72.36235182761047, 72.4561850428594, 72.55001825810834, 72.64385147335727, 72.73768468860621, 72.83151790385514, 72.92535111910406, 73.019184334353, 73.11301754960193, 73.20685076485087, 73.3006839800998, 73.39451719534874, 73.48835041059768, 73.58218362584661, 73.67601684109555, 73.76985005634447, 73.8636832715934, 73.95751648684234, 74.05134970209127, 74.14518291734021, 74.23901613258914, 74.33284934783808, 74.42668256308701, 74.52051577833595, 74.61434899358488, 74.70818220883382, 74.80201542408275, 74.89584863933169, 74.98968185458062, 75.08351506982956, 75.1773482850785, 75.27118150032743, 75.36501471557635, 75.45884793082529, 75.55268114607422, 75.64651436132316, 75.74034757657209, 75.83418079182103, 75.92801400706996, 76.0218472223189, 76.11568043756783, 76.20951365281675, 76.30334686806569, 76.39718008331462, 76.49101329856356, 76.5848465138125, 76.67867972906143, 76.77251294431036, 76.8663461595593, 76.96017937480823, 77.05401259005717, 77.1478458053061, 77.24167902055504, 77.33551223580398, 77.42934545105291, 77.52317866630185, 77.61701188155078, 77.71084509679972, 77.80467831204865, 77.89851152729757, 77.9923447425465, 78.08617795779544, 78.18001117304438, 78.27384438829331, 78.36767760354225, 78.46151081879118, 78.55534403404012, 78.64917724928905, 78.74301046453797, 78.83684367978691, 78.93067689503584, 79.02451011028478, 79.11834332553371, 79.21217654078265, 79.30600975603159, 79.39984297128052, 79.49367618652946, 79.58750940177839, 79.68134261702733, 79.77517583227626, 79.8690090475252, 79.96284226277413, 80.05667547802307, 80.150508693272, 80.24434190852094, 80.33817512376987, 80.43200833901881, 80.52584155426774, 80.61967476951668, 80.71350798476561, 80.80734120001455, 80.90117441526348, 80.99500763051242, 81.08884084576135, 81.18267406101029, 81.27650727625921, 81.37034049150813, 81.46417370675707, 81.558006922006, 81.65184013725494, 81.74567335250387, 81.8395065677528, 81.93333978300174, 82.02717299825068, 82.12100621349961, 82.21483942874855, 82.30867264399748, 82.40250585924642, 82.49633907449535, 82.59017228974429, 82.68400550499322, 82.77783872024216, 82.8716719354911, 82.96550515074003, 83.05933836598896, 83.1531715812379, 83.24700479648683, 83.34083801173577, 83.4346712269847, 83.52850444223364, 83.62233765748257, 83.7161708727315, 83.81000408798043, 83.90383730322937, 83.9976705184783, 84.09150373372724, 84.18533694897617, 84.2791701642251, 84.37300337947404, 84.46683659472298, 84.5606698099719, 84.65450302522083, 84.74833624046977, 84.8421694557187, 84.93600267096764, 85.02983588621657, 85.12366910146551, 85.21750231671444])
+              .range(['#0000ffff', '#0000feff', '#0001fcff', '#0002fbff', '#0003f9ff', '#0003f8ff', '#0004f6ff', '#0005f5ff', '#0006f3ff', '#0006f2ff', '#0007f0ff', '#0008efff', '#0009edff', '#000aebff', '#000aeaff', '#000be8ff', '#000ce7ff', '#000de5ff', '#000de4ff', '#000ee2ff', '#000fe1ff', '#0010dfff', '#0010deff', '#0011dcff', '#0012dbff', '#0013d9ff', '#0014d7ff', '#0014d6ff', '#0015d4ff', '#0016d3ff', '#0017d1ff', '#0017d0ff', '#0018ceff', '#0019cdff', '#001acbff', '#001bcaff', '#001bc8ff', '#001cc7ff', '#001dc5ff', '#001ec3ff', '#001ec2ff', '#001fc0ff', '#0020bfff', '#0021bdff', '#0021bcff', '#0022baff', '#0023b9ff', '#0024b7ff', '#0025b6ff', '#0025b4ff', '#0026b3ff', '#0027b1ff', '#0028afff', '#0028aeff', '#0029acff', '#002aabff', '#002ba9ff', '#002ca8ff', '#002ca6ff', '#002da5ff', '#002ea3ff', '#002fa2ff', '#002fa0ff', '#00309fff', '#00319dff', '#00329bff', '#00329aff', '#003398ff', '#003497ff', '#003595ff', '#003694ff', '#003692ff', '#003791ff', '#00388fff', '#00398eff', '#00398cff', '#003a8bff', '#003b89ff', '#003c87ff', '#003d86ff', '#003d84ff', '#003e83ff', '#003f81ff', '#004080ff', '#00407eff', '#00417dff', '#00427bff', '#00437aff', '#004378ff', '#004477ff', '#004575ff', '#004673ff', '#004772ff', '#004770ff', '#00486fff', '#00496dff', '#004a6cff', '#004a6aff', '#004b69ff', '#004c67ff', '#004d66ff', '#004e64ff', '#004e63ff', '#004f61ff', '#00505fff', '#00515eff', '#00515cff', '#00525bff', '#005359ff', '#005458ff', '#005456ff', '#005555ff', '#005653ff', '#005752ff', '#005850ff', '#00584fff', '#00594dff', '#005a4bff', '#005b4aff', '#005b48ff', '#005c47ff', '#005d45ff', '#005e44ff', '#005f42ff', '#005f41ff', '#00603fff', '#00613eff', '#00623cff', '#00623aff', '#006339ff', '#006437ff', '#006536ff', '#006534ff', '#006633ff', '#006731ff', '#006830ff', '#00692eff', '#00692dff', '#006a2bff', '#006b2aff', '#006c28ff', '#006c26ff', '#006d25ff', '#006e23ff', '#006f22ff', '#007020ff', '#00701fff', '#00711dff', '#00721cff', '#00731aff', '#007319ff', '#007417ff', '#007516ff', '#007614ff', '#007612ff', '#007711ff', '#00780fff', '#00790eff', '#007a0cff', '#007a0bff', '#007b09ff', '#007c08ff', '#007d06ff', '#007d05ff', '#007e03ff', '#007f02ff', '#008000ff', '#018100ff', '#028100ff', '#048200ff', '#058300ff', '#078400ff', '#088400ff', '#0a8500ff', '#0b8600ff', '#0d8700ff', '#0e8700ff', '#108800ff', '#118900ff', '#138a00ff', '#158a00ff', '#168b00ff', '#188c00ff', '#198d00ff', '#1b8e00ff', '#1c8e00ff', '#1e8f00ff', '#1f9000ff', '#219100ff', '#229100ff', '#249200ff', '#259300ff', '#279400ff', '#299400ff', '#2a9500ff', '#2c9600ff', '#2d9700ff', '#2f9800ff', '#309800ff', '#329900ff', '#339a00ff', '#359b00ff', '#369b00ff', '#389c00ff', '#399d00ff', '#3b9e00ff', '#3d9e00ff', '#3e9f00ff', '#40a000ff', '#41a100ff', '#43a100ff', '#44a200ff', '#46a300ff', '#47a400ff', '#49a500ff', '#4aa500ff', '#4ca600ff', '#4da700ff', '#4fa800ff', '#51a800ff', '#52a900ff', '#54aa00ff', '#55ab00ff', '#57ab00ff', '#58ac00ff', '#5aad00ff', '#5bae00ff', '#5daf00ff', '#5eaf00ff', '#60b000ff', '#61b100ff', '#63b200ff', '#65b200ff', '#66b300ff', '#68b400ff', '#69b500ff', '#6bb500ff', '#6cb600ff', '#6eb700ff', '#6fb800ff', '#71b800ff', '#72b900ff', '#74ba00ff', '#75bb00ff', '#77bc00ff', '#79bc00ff', '#7abd00ff', '#7cbe00ff', '#7dbf00ff', '#7fbf00ff', '#80c000ff', '#82c100ff', '#83c200ff', '#85c200ff', '#86c300ff', '#88c400ff', '#8ac500ff', '#8bc500ff', '#8dc600ff', '#8ec700ff', '#90c800ff', '#91c900ff', '#93c900ff', '#94ca00ff', '#96cb00ff', '#97cc00ff', '#99cc00ff', '#9acd00ff', '#9cce00ff', '#9ecf00ff', '#9fcf00ff', '#a1d000ff', '#a2d100ff', '#a4d200ff', '#a5d300ff', '#a7d300ff', '#a8d400ff', '#aad500ff', '#abd600ff', '#add600ff', '#aed700ff', '#b0d800ff', '#b2d900ff', '#b3d900ff', '#b5da00ff', '#b6db00ff', '#b8dc00ff', '#b9dc00ff', '#bbdd00ff', '#bcde00ff', '#bedf00ff', '#bfe000ff', '#c1e000ff', '#c2e100ff', '#c4e200ff', '#c6e300ff', '#c7e300ff', '#c9e400ff', '#cae500ff', '#cce600ff', '#cde600ff', '#cfe700ff', '#d0e800ff', '#d2e900ff', '#d3ea00ff', '#d5ea00ff', '#d6eb00ff', '#d8ec00ff', '#daed00ff', '#dbed00ff', '#ddee00ff', '#deef00ff', '#e0f000ff', '#e1f000ff', '#e3f100ff', '#e4f200ff', '#e6f300ff', '#e7f300ff', '#e9f400ff', '#eaf500ff', '#ecf600ff', '#eef700ff', '#eff700ff', '#f1f800ff', '#f2f900ff', '#f4fa00ff', '#f5fa00ff', '#f7fb00ff', '#f8fc00ff', '#fafd00ff', '#fbfd00ff', '#fdfe00ff', '#feff00ff', '#ffff00ff', '#fffd00ff', '#fffc00ff', '#fffa00ff', '#fff900ff', '#fff700ff', '#fff600ff', '#fff400ff', '#fff300ff', '#fff100ff', '#fff000ff', '#ffee00ff', '#ffed00ff', '#ffeb00ff', '#ffe900ff', '#ffe800ff', '#ffe600ff', '#ffe500ff', '#ffe300ff', '#ffe200ff', '#ffe000ff', '#ffdf00ff', '#ffdd00ff', '#ffdc00ff', '#ffda00ff', '#ffd900ff', '#ffd700ff', '#ffd500ff', '#ffd400ff', '#ffd200ff', '#ffd100ff', '#ffcf00ff', '#ffce00ff', '#ffcc00ff', '#ffcb00ff', '#ffc900ff', '#ffc800ff', '#ffc600ff', '#ffc500ff', '#ffc300ff', '#ffc100ff', '#ffc000ff', '#ffbe00ff', '#ffbd00ff', '#ffbb00ff', '#ffba00ff', '#ffb800ff', '#ffb700ff', '#ffb500ff', '#ffb400ff', '#ffb200ff', '#ffb000ff', '#ffaf00ff', '#ffad00ff', '#ffac00ff', '#ffaa00ff', '#ffa900ff', '#ffa700ff', '#ffa600ff', '#ffa400ff', '#ffa300ff', '#ffa100ff', '#ffa000ff', '#ff9e00ff', '#ff9c00ff', '#ff9b00ff', '#ff9900ff', '#ff9800ff', '#ff9600ff', '#ff9500ff', '#ff9300ff', '#ff9200ff', '#ff9000ff', '#ff8f00ff', '#ff8d00ff', '#ff8c00ff', '#ff8a00ff', '#ff8800ff', '#ff8700ff', '#ff8500ff', '#ff8400ff', '#ff8200ff', '#ff8100ff', '#ff7f00ff', '#ff7e00ff', '#ff7c00ff', '#ff7b00ff', '#ff7900ff', '#ff7800ff', '#ff7600ff', '#ff7400ff', '#ff7300ff', '#ff7100ff', '#ff7000ff', '#ff6e00ff', '#ff6d00ff', '#ff6b00ff', '#ff6a00ff', '#ff6800ff', '#ff6700ff', '#ff6500ff', '#ff6400ff', '#ff6200ff', '#ff6000ff', '#ff5f00ff', '#ff5d00ff', '#ff5c00ff', '#ff5a00ff', '#ff5900ff', '#ff5700ff', '#ff5600ff', '#ff5400ff', '#ff5300ff', '#ff5100ff', '#ff5000ff', '#ff4e00ff', '#ff4c00ff', '#ff4b00ff', '#ff4900ff', '#ff4800ff', '#ff4600ff', '#ff4500ff', '#ff4300ff', '#ff4200ff', '#ff4000ff', '#ff3f00ff', '#ff3d00ff', '#ff3c00ff', '#ff3a00ff', '#ff3800ff', '#ff3700ff', '#ff3500ff', '#ff3400ff', '#ff3200ff', '#ff3100ff', '#ff2f00ff', '#ff2e00ff', '#ff2c00ff', '#ff2b00ff', '#ff2900ff', '#ff2800ff', '#ff2600ff', '#ff2400ff', '#ff2300ff', '#ff2100ff', '#ff2000ff', '#ff1e00ff', '#ff1d00ff', '#ff1b00ff', '#ff1a00ff', '#ff1800ff', '#ff1700ff', '#ff1500ff', '#ff1400ff', '#ff1200ff', '#ff1000ff', '#ff0f00ff', '#ff0d00ff', '#ff0c00ff', '#ff0a00ff', '#ff0900ff', '#ff0700ff', '#ff0600ff', '#ff0400ff', '#ff0300ff', '#ff0100ff', '#ff0000ff']);
+    
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.x = d3.scale.linear()
+              .domain([38.39472790749629, 85.21750231671444])
+              .range([0, 450 - 50]);
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.legend = L.control({position: 'topright'});
+    color_map_34cbfd7584ca6eebb54acb1188418c76.legend.onAdd = function (map) {var div = L.DomUtil.create('div', 'legend'); return div};
+    color_map_34cbfd7584ca6eebb54acb1188418c76.legend.addTo(map_ee75dbe9543ca62e4b6512fcdaf725b0);
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.xAxis = d3.svg.axis()
+        .scale(color_map_34cbfd7584ca6eebb54acb1188418c76.x)
+        .orient("top")
+        .tickSize(1)
+        .tickValues([38.39472790749629, 54.00231937723567, 69.60991084697505, 85.21750231671444]);
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.svg = d3.select(".legend.leaflet-control").append("svg")
+        .attr("id", 'legend')
+        .attr("width", 450)
+        .attr("height", 40);
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.g = color_map_34cbfd7584ca6eebb54acb1188418c76.svg.append("g")
+        .attr("class", "key")
+        .attr("fill", "black")
+        .attr("transform", "translate(25,16)");
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.g.selectAll("rect")
+        .data(color_map_34cbfd7584ca6eebb54acb1188418c76.color.range().map(function(d, i) {
+          return {
+            x0: i ? color_map_34cbfd7584ca6eebb54acb1188418c76.x(color_map_34cbfd7584ca6eebb54acb1188418c76.color.domain()[i - 1]) : color_map_34cbfd7584ca6eebb54acb1188418c76.x.range()[0],
+            x1: i < color_map_34cbfd7584ca6eebb54acb1188418c76.color.domain().length ? color_map_34cbfd7584ca6eebb54acb1188418c76.x(color_map_34cbfd7584ca6eebb54acb1188418c76.color.domain()[i]) : color_map_34cbfd7584ca6eebb54acb1188418c76.x.range()[1],
+            z: d
+          };
+        }))
+      .enter().append("rect")
+        .attr("height", 40 - 30)
+        .attr("x", function(d) { return d.x0; })
+        .attr("width", function(d) { return d.x1 - d.x0; })
+        .style("fill", function(d) { return d.z; });
+
+    color_map_34cbfd7584ca6eebb54acb1188418c76.g.call(color_map_34cbfd7584ca6eebb54acb1188418c76.xAxis).append("text")
+        .attr("class", "caption")
+        .attr("y", 21)
+        .attr("fill", "black")
+        .text("");
+</script>
+</html>

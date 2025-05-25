@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: dubai-real-estate-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DUBAI_DASHBOARD_ENV
+        value: production
+      - key: DUBAI_DASHBOARD_ROOT
+        value: /opt/render/project/src

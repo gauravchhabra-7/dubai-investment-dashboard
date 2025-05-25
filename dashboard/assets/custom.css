@@ -1,0 +1,263 @@
+/* Enhanced UI styles for Dubai Real Estate Dashboard */
+
+/* Dashboard container */
+.container-fluid {
+    padding: 20px 30px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Header styling */
+h1.text-center {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+h5.text-center {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+/* Card styling */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 25px;
+    border: none;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eaecef;
+    font-weight: 600;
+}
+
+.card-header h5 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Tab styling */
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    padding: 12px 20px;
+    font-weight: 500;
+    margin-right: 5px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #ddd;
+}
+
+.nav-tabs .nav-link.active {
+    color: #2c3e50;
+    background-color: transparent;
+    border-bottom: 2px solid #3498db;
+}
+
+/* Filters styling */
+.dash-dropdown {
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.dash-dropdown:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+label {
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Table container improvements */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* DataTable styling */
+.dash-table-container .dash-spreadsheet-container {
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dash-spreadsheet-inner table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.dash-spreadsheet-inner th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 12px 15px !important;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.dash-spreadsheet-inner td {
+    padding: 10px 15px !important;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.dash-spreadsheet-inner tr:hover td {
+    background-color: #f8f9fa;
+}
+
+/* Loading styling */
+._dash-loading {
+    margin: 100px auto;
+    text-align: center;
+    color: #3498db;
+}
+
+/* Metric cards styling */
+.card-body h3 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.card-body h6.text-muted {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #95a5a6;
+}
+
+.dash-filter--case {
+    max-width: 100%;
+    font-size: 14px !important;
+}
+
+/* Improve table cell text overflow handling */
+.dash-cell-value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    padding: 6px 8px !important;
+}
+
+/* Fix table header styles */
+.dash-header {
+    font-weight: 600 !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+    border-bottom: 2px solid #ddd;
+    font-size: 14px !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 992px) {
+    .container-fluid {
+        padding: 15px;
+    }
+    
+    h1.text-center {
+        font-size: 28px;
+    }
+    
+    h5.text-center {
+        font-size: 16px;
+    }
+    
+    .card-header {
+        padding: 12px 15px;
+    }
+    
+    .card-body {
+        padding: 15px;
+    }
+    
+    .dash-spreadsheet {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    h1.text-center {
+        font-size: 24px;
+    }
+    
+    .card-header h5 {
+        font-size: 16px;
+    }
+    
+    .dash-header, .dash-cell-value {
+        padding: 6px 4px !important;
+        font-size: 12px !important; 
+    }
+
+    /* Data quality indicator styles */
+.data-quality-indicator {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5px;
+    font-size: 12px;
+  }
+  
+  .data-quality-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+  }
+  
+  .data-quality-high {
+    background-color: rgba(40, 167, 69, 0.9);
+    color: white;
+  }
+  
+  .data-quality-medium {
+    background-color: rgba(255, 193, 7, 0.9);
+    color: black;
+  }
+  
+  .data-quality-low {
+    background-color: rgba(220, 53, 69, 0.9);
+    color: white;
+  }
+  
+  .data-quality-unknown {
+    background-color: rgba(108, 117, 125, 0.9);
+    color: white;
+  }
+  
+  .data-estimation-note {
+    background-color: rgba(255, 255, 200, 0.8);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-style: italic;
+    font-size: 12px;
+    margin-top: 5px;
+    display: inline-block;
+  }
+}
