@@ -34,7 +34,7 @@ venv.bak/
 # Raw data files (keep local only)
 data/dashboard_merging_2.csv
 data/df_launch_completion_analysis.csv
-data/*.geojson
+data/*.kml
 data/*.csv
 
 # But include processed output folder

@@ -1199,8 +1199,10 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
             from scripts.geographic_analysis import load_kml_file, prepare_geographic_data, create_price_heatmap
             from scripts.insights import create_insights_component
             
-            custom_geojson_path = '/Users/gaurav.chhabra/MU/dubai_realestate_analysis/data/complete_community_with_csv_names.geojson'
-            
+            current_dir = os.path.dirname(__file__)  # dashboard/
+            parent_dir = os.path.dirname(current_dir)  # project root  
+            custom_geojson_path = os.path.join(parent_dir, 'data', 'complete_community_with_csv_names.geojson')
+
             if os.path.exists(custom_geojson_path):
                 geo_data = load_kml_file(custom_geojson_path)
                 
@@ -1305,7 +1307,9 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
         try:
             # Try to load geographic data directly
             from scripts.geographic_analysis import load_kml_file, prepare_geographic_data
-            custom_geojson_path = '/Users/gaurav.chhabra/MU/dubai_realestate_analysis/data/complete_community_with_csv_names.geojson'
+            current_dir = os.path.dirname(__file__)  # dashboard/
+            parent_dir = os.path.dirname(current_dir)  # project root  
+            custom_geojson_path = os.path.join(parent_dir, 'data', 'complete_community_with_csv_names.geojson')
             
             if os.path.exists(custom_geojson_path):
                 geo_data = load_kml_file(custom_geojson_path)
@@ -1437,8 +1441,11 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
         try:
             # Try to load geographic data directly
             from scripts.geographic_analysis import load_kml_file, prepare_geographic_data
-            custom_geojson_path = '/Users/gaurav.chhabra/MU/dubai_realestate_analysis/data/complete_community_with_csv_names.geojson'
             
+            current_dir = os.path.dirname(__file__)  # dashboard/
+            parent_dir = os.path.dirname(current_dir)  # project root  
+            custom_geojson_path = os.path.join(parent_dir, 'data', 'complete_community_with_csv_names.geojson')
+
             if os.path.exists(custom_geojson_path):
                 geo_data = load_kml_file(custom_geojson_path)
                 
@@ -1537,8 +1544,11 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
         try:
             # Try to load geographic data directly
             from scripts.geographic_analysis import load_kml_file, prepare_geographic_data
-            custom_geojson_path = '/Users/gaurav.chhabra/MU/dubai_realestate_analysis/data/complete_community_with_csv_names.geojson'
             
+            current_dir = os.path.dirname(__file__)  # dashboard/
+            parent_dir = os.path.dirname(current_dir)  # project root  
+            custom_geojson_path = os.path.join(parent_dir, 'data', 'complete_community_with_csv_names.geojson')
+
             if os.path.exists(custom_geojson_path):
                 geo_data = load_kml_file(custom_geojson_path)
                 
