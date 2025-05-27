@@ -342,7 +342,7 @@ def create_individual_project_analysis(df, title="Individual Project Performance
             ticksuffix='%',
             range=x_range
         ),
-        margin=dict(l=250, r=120, t=80, b=80)
+        margin=dict(l=250, r=120, t=80, b=120)
     )
     
     # Add subtitle with data info
@@ -350,7 +350,7 @@ def create_individual_project_analysis(df, title="Individual Project Performance
     fig.add_annotation(
         text=f"Showing top 15 of {total_projects} projects (ranked by CAGR)",
         xref="paper", yref="paper",
-        x=0.5, y=-0.08,
+        x=0.5, y=-0.18,
         showarrow=False,
         font=dict(size=12, color="gray"),
         xanchor="center"
@@ -477,7 +477,7 @@ def create_area_performance_comparison(df, title="Area Performance Comparison"):
                 ticksuffix='%',
                 range=x_range
             ),
-            margin=dict(l=300, r=120, t=80, b=80)
+            margin=dict(l=300, r=120, t=80, b=120)
         )
         
         # Add subtitle with data info
@@ -485,7 +485,7 @@ def create_area_performance_comparison(df, title="Area Performance Comparison"):
         fig.add_annotation(
             text=f"Showing top 15 of {total_areas} areas with ≥3 projects each",
             xref="paper", yref="paper",
-            x=0.5, y=-0.08,
+            x=0.5, y=-0.18,
             showarrow=False,
             font=dict(size=12, color="gray"),
             xanchor="center"
@@ -624,7 +624,7 @@ def create_developer_track_record_analysis(df, title="Developer Track Record Ana
                 ticksuffix='%',
                 range=x_range
             ),
-            margin=dict(l=350, r=120, t=80, b=80)
+            margin=dict(l=350, r=120, t=80, b=120)
         )
         
         # Add subtitle with data info
@@ -632,7 +632,7 @@ def create_developer_track_record_analysis(df, title="Developer Track Record Ana
         fig.add_annotation(
             text=f"Showing top 15 of {total_developers} developers with ≥2 projects each",
             xref="paper", yref="paper",
-            x=0.5, y=-0.08,
+            x=0.5, y=-0.18,
             showarrow=False,
             font=dict(size=12, color="gray"),
             xanchor="center"

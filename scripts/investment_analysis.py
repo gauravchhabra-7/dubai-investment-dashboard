@@ -790,34 +790,6 @@ def create_opportunity_scatter(df, time_horizon="short_term_growth", max_points=
         layer="below"
     )
     
-    # Add data quality annotation
-    # data_quality_colors = {
-    #     "high": "green",
-    #     "medium": "orange",
-    #     "low": "red",
-    #     "none": "red"
-    # }
-    
-    # # Add a data quality indicator in the corner
-    # fig.add_annotation(
-    #     x=1,
-    #     y=0,
-    #     xref="paper",
-    #     yref="paper",
-    #     text=f"Data Quality: {data_quality.upper()} ({coverage_pct:.1f}% coverage)",
-    #     showarrow=False,
-    #     font=dict(
-    #         size=12,
-    #         color="white"
-    #     ),
-    #     align="right",
-    #     bgcolor=data_quality_colors.get(data_quality, "gray"),
-    #     bordercolor="black",
-    #     borderwidth=1,
-    #     borderpad=4,
-    #     opacity=0.8
-    # )
-    
     # If data is estimated, add note
     if metadata['estimation_method'] is not None:
         method_note = "price levels" if metadata['estimation_method'] == 'price_level' else "yearly prices"
@@ -1022,7 +994,6 @@ def create_microsegment_table(microsegment_df, metadata=None):
         ],
         data=display_df.to_dict('records'),
         sort_action="native",
-        filter_action="native",
         page_size=10,
         style_table={'overflowX': 'auto'},
         style_header={
@@ -1044,22 +1015,6 @@ def create_microsegment_table(microsegment_df, metadata=None):
         'none': 'red',
         'unknown': 'gray'
     }
-    
-    # Create data quality badge
-    quality_badge = html.Div([
-        html.Span(
-            f"Data Quality: {data_quality.upper()} ({coverage_pct:.1f}% coverage)",
-            style={
-                'backgroundColor': quality_colors.get(data_quality, 'gray'),
-                'color': 'white',
-                'padding': '4px 8px',
-                'borderRadius': '4px',
-                'fontSize': '12px',
-                'fontWeight': 'bold',
-                'marginRight': '10px'
-            }
-        )
-    ]) if metadata is not None else None
     
     # Note about data estimation if applicable
     estimation_note = None
@@ -1084,9 +1039,6 @@ def create_microsegment_table(microsegment_df, metadata=None):
     header_components = [
         html.H6("Top Investment Opportunities by Micro-Segment")
     ]
-    
-    if quality_badge:
-        header_components.append(quality_badge)
     
     if estimation_note:
         header_components.append(estimation_note)

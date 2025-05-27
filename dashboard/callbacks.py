@@ -2173,7 +2173,6 @@ def create_emerging_segments_table(emerging_segments_df):
             ],
             data=display_df.to_dict('records'),
             sort_action="native",
-            filter_action="native",
             page_size=15,
             style_table={'overflowX': 'auto'},
             style_header={
@@ -2382,7 +2381,6 @@ def create_microsegment_table(microsegment_df):
             columns=table_columns,
             data=records,
             sort_action="native",
-            filter_action="native",
             page_size=10,
             style_table={
                 'overflowX': 'auto',
@@ -2531,7 +2529,6 @@ def create_emerging_segments_table(emerging_segments_df, metadata=None):
             ],
             data=display_df.to_dict('records'),
             sort_action="native",
-            filter_action="native",
             page_size=15,
             style_table={'overflowX': 'auto'},
             style_header={
@@ -2553,22 +2550,6 @@ def create_emerging_segments_table(emerging_segments_df, metadata=None):
             'none': 'red',
             'unknown': 'gray'
         }
-        
-        # Create data quality badge
-        quality_badge = html.Div([
-            html.Span(
-                f"Data Quality: {data_quality.upper()} ({coverage_pct:.1f}% coverage)",
-                style={
-                    'backgroundColor': quality_colors.get(data_quality, 'gray'),
-                    'color': 'white',
-                    'padding': '4px 8px',
-                    'borderRadius': '4px',
-                    'fontSize': '12px',
-                    'fontWeight': 'bold',
-                    'marginRight': '10px'
-                }
-            )
-        ]) if metadata is not None else None
         
         # Note about data estimation if applicable
         estimation_note = None
@@ -2593,9 +2574,6 @@ def create_emerging_segments_table(emerging_segments_df, metadata=None):
         header_components = [
             html.H6("Emerging Segments with Accelerating Growth", className="mb-2")
         ]
-        
-        if quality_badge:
-            header_components.append(quality_badge)
         
         if estimation_note:
             header_components.append(estimation_note)
@@ -2680,7 +2658,6 @@ def create_outperformers_table(outperformers_df):
             ],
             data=display_df.to_dict('records'),
             sort_action="native",
-            filter_action="native",
             page_size=10,
             style_table={'overflowX': 'auto'},
             style_header={
