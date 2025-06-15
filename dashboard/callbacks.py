@@ -107,7 +107,13 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                     filtered_df,
                     'investment',
                     'heatmap',
-                    filters,
+                    {
+                        'property_type_en': property_type,
+                        'area_name_en': area,
+                        'rooms_en': room_type,
+                        'reg_type_en': registration_type,
+                        'time_horizon': time_horizon
+                    },
                     metadata
                 )
             except Exception as e:
@@ -246,7 +252,7 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                         from scripts.insights import create_insights_component
                         
                         # Get metadata even with pre-calculated data
-                        _, metadata = perform_microsegment_analysis(filtered_df, growth_column=time_horizon)
+                        _, metadata = perform_microsegment_analysis(filtered_df, filters=filters, growth_column=time_horizon)
                         
                         # Create the table component
                         table = create_microsegment_table(filtered_micro_df, metadata)
@@ -281,7 +287,7 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                 from scripts.investment_analysis import perform_microsegment_analysis, create_microsegment_table
                 from scripts.insights import create_insights_component
                 
-                micro_segments, metadata = perform_microsegment_analysis(filtered_df, growth_column=time_horizon)
+                micro_segments, metadata = perform_microsegment_analysis(filtered_df, filters=filters, growth_column=time_horizon)
                 table = create_microsegment_table(micro_segments, metadata)
                 
                 # Add insights component
@@ -1627,34 +1633,47 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
         except Exception as e:
             print(f"Error in transaction volume callback: {e}")
             return dcc.Graph(figure=create_default_figure("Transaction Volume", str(e))), html.Div("Error generating insights")
-        
-    #--------------------------
-    # Launch to Completion Tab Callbacks
-    #--------------------------
     
+#--------------------------
+    # Launch to Completion Tab Callbacks (Project Analysis)
+    #--------------------------
     
     @app.callback(
-        [Output("project-appreciation-graph", "children"),
+        [Output("project-appreciation-chart", "children"),
          Output("project-appreciation-insights", "children")],
         [Input("ltc-property-type-filter", "value"),
          Input("ltc-area-filter", "value"),
-         Input("ltc-developer-filter", "value")]
+         Input("ltc-developer-filter", "value"),
+         Input("ltc-room-type-filter", "value")]  # Added room type filter
     )
-    def update_individual_projects(property_type, area, developer):
-        from scripts.project_analysis import filter_project_data, create_individual_project_analysis, prepare_insights_metadata, get_peer_group_info
+    def update_individual_projects(property_type, area, developer, room_type):
+        from scripts.project_analysis import prepare_project_data, create_individual_project_analysis, prepare_insights_metadata, get_peer_group_info
         from scripts.insights import create_insights_component
         """Update individual project performance visualization"""
-        if launch_completion_df is None:
-            return dcc.Graph(figure=create_default_figure("Individual Project Analysis", "No project data available")), html.Div("No data available")
+        
+        # Handle empty filter selections - default to 'All'
+        property_type = property_type if property_type else 'All'
+        area = area if area else 'All'
+        developer = developer if developer else 'All'
+        room_type = room_type if room_type else 'All'
         
         try:
-            # Apply filters
-            filtered_df = filter_project_data(
-                launch_completion_df,
+            # Re-process data with deed-level filtering
+            # Note: prepare_project_data now handles all filtering internally
+            filtered_df = prepare_project_data(
                 property_type=property_type,
                 area=area,
-                developer=developer
+                developer=developer,
+                room_type=room_type
             )
+            
+            if len(filtered_df) == 0:
+                return dcc.Graph(
+                    id="project-appreciation-chart",  # Add ID to the graph component
+                    figure=create_default_figure("Individual Project Analysis", "No projects match your current filters. Try adjusting your selection."),
+                    config={'responsive': True},
+                    style={'width': '100%', 'height': '100%'}
+                ), html.Div("No data available for insights")
             
             # Create visualization
             fig = create_individual_project_analysis(filtered_df)
@@ -1662,21 +1681,8 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
             # Prepare metadata for insights
             metadata = prepare_insights_metadata(filtered_df)
             
-            # Add specific metrics for individual projects insights
-            if len(filtered_df) > 0:
-                metadata.update({
-                    'market_average_cagr': filtered_df['price_sqft_cagr'].mean(),
-                    'top_quartile_cagr': filtered_df['price_sqft_cagr'].quantile(0.75),
-                    'median_transaction_count': filtered_df['transaction_count'].median(),
-                    'high_tx_volatility': filtered_df[filtered_df['transaction_count'] >= 100]['peer_volatility'].mean() if len(filtered_df[filtered_df['transaction_count'] >= 100]) > 0 else 16,
-                    'low_tx_volatility': filtered_df[filtered_df['transaction_count'] < 10]['peer_volatility'].mean() if len(filtered_df[filtered_df['transaction_count'] < 10]) > 0 else 65,
-                    'short_duration_avg_cagr': filtered_df[filtered_df['duration_years'] < 1]['price_sqft_cagr'].mean() if len(filtered_df[filtered_df['duration_years'] < 1]) > 0 else 12.8,
-                    'short_duration_volatility': filtered_df[filtered_df['duration_years'] < 1]['peer_volatility'].mean() if len(filtered_df[filtered_df['duration_years'] < 1]) > 0 else 61,
-                    'outperforming_percentage': (filtered_df['market_outperformance'] > 0).mean() * 100 if 'market_outperformance' in filtered_df.columns else 45
-                })
-            
-            # Get peer group info if specific filters are applied
-            peer_info = get_peer_group_info(launch_completion_df, property_type, area)
+            # Add context-specific metadata if specific filters are applied
+            peer_info = get_peer_group_info(filtered_df, property_type, area)
             metadata.update(peer_info)
             
             # Generate insights
@@ -1687,12 +1693,14 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                 {
                     'property_type': property_type,
                     'area': area,
-                    'developer': developer
+                    'developer': developer,
+                    'room_type': room_type  # Added room type to filters
                 },
                 metadata
             )
             
             return dcc.Graph(
+                id="project-appreciation-graph",  # Add ID to the graph component
                 figure=fig,
                 config={
                     'responsive': True,
@@ -1703,7 +1711,8 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                 style={
                     'width': '100%', 
                     'height': '100%',
-                    'minHeight': '500px'
+                    'minHeight': '500px',
+                    'marginBottom': '30px'  # Add margin to prevent overlap
                 },
                 className="responsive-chart"
             ), insights
@@ -1713,33 +1722,178 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
             import traceback
             traceback.print_exc()
             return dcc.Graph(
+                id="project-appreciation-chart",
                 figure=create_default_figure("Individual Project Analysis", str(e)),
                 config={'responsive': True},
                 style={'width': '100%', 'height': '100%'}
             ), html.Div("Error generating insights")
+
+    # Add new callback for project drill-down (room type breakdown)
+    @app.callback(
+        Output("project-drilldown-table", "children"),
+        [Input("project-appreciation-graph", "clickData"),
+         State("ltc-property-type-filter", "value"),
+         State("ltc-area-filter", "value"),
+         State("ltc-developer-filter", "value"),
+         State("ltc-room-type-filter", "value"),  # Add room type state
+         State("project-appreciation-graph", "children")]  # Get the graph component to access data
+    )
+    def update_project_drilldown(clickData, property_type, area, developer, room_type, graph_component):
+        """Show room-type breakdown when a project is clicked"""
+        from scripts.project_analysis import get_project_room_breakdown, prepare_project_data
+        
+        if clickData is None:
+            return html.Div()  # Return empty div when no project is clicked
+        
+        try:
+            # Get the clicked project name
+            clicked_point = clickData['points'][0]
+            project_name = clicked_point.get('y', '')  # Project name is on y-axis
+            
+            if not project_name:
+                return html.Div("Unable to identify the clicked project")
+            
+            # Re-load the filtered data to get project IDs
+            filtered_df = prepare_project_data(
+                property_type=property_type if property_type else 'All',
+                area=area if area else 'All',
+                developer=developer if developer else 'All',
+                room_type=room_type if room_type else 'All'
+            )
+            
+            # Find the project ID by matching the project name
+            project_row = filtered_df[filtered_df['project_name_en'] == project_name]
+            
+            if len(project_row) == 0:
+                return html.Div(f"Project '{project_name}' not found in filtered data")
+            
+            project_id = int(project_row.iloc[0]['project_number_int'])
+            
+            # Get room breakdown for this project
+            room_breakdown = get_project_room_breakdown(
+                project_id, 
+                property_type=property_type if property_type else 'All',
+                area=area if area else 'All',
+                developer=developer if developer else 'All'
+            )
+            
+            if len(room_breakdown) == 0:
+                # If no breakdown available, show a message based on current filter
+                if room_type and room_type != 'All':
+                    return html.Div([
+                        html.H5(f"Room Type Breakdown: {project_name}", className="mt-3 mb-2"),
+                        html.P(f"Currently filtered to show only {room_type} units. No additional breakdown available.", 
+                               className="text-muted")
+                    ])
+                else:
+                    return html.Div([
+                        html.H5(f"Room Type Breakdown: {project_name}", className="mt-3 mb-2"),
+                        html.P("Insufficient data to calculate room-type breakdown for this project.", 
+                               className="text-muted")
+                    ])
+            
+            # Prepare data for display table
+            room_breakdown = room_breakdown.rename(columns={
+                'room_type': 'Room Type',
+                'cagr': 'CAGR (%)',
+                'launch_price_sqft': 'Launch Price',
+                'recent_price_sqft': 'Recent Price',
+                'transaction_count': 'Total Transactions',
+                'recent_deeds': 'Recent Deeds'
+            })
+            
+            # Round numeric columns
+            room_breakdown['CAGR (%)'] = room_breakdown['CAGR (%)'].round(1)
+            room_breakdown['Launch Price'] = room_breakdown['Launch Price'].round(0)
+            room_breakdown['Recent Price'] = room_breakdown['Recent Price'].round(0)
+            
+            # Create quality flag column for display
+            room_breakdown['Quality Flag'] = room_breakdown.apply(
+                lambda x: 'Thin Data' if x.get('Recent Deeds', 0) < 3 else 
+                         'Review Needed' if abs(x.get('CAGR (%)', 0)) > 400 else 'Good', 
+                axis=1
+            )
+            
+            # Create dash table
+            table = dash_table.DataTable(
+                data=room_breakdown.to_dict('records'),
+                columns=[
+                    {"name": "Room Type", "id": "Room Type"},
+                    {"name": "CAGR (%)", "id": "CAGR (%)", "type": "numeric", "format": {"specifier": ".1f"}},
+                    {"name": "Launch Price", "id": "Launch Price", "type": "numeric", "format": {"specifier": ",.0f"}},
+                    {"name": "Recent Price", "id": "Recent Price", "type": "numeric", "format": {"specifier": ",.0f"}},
+                    {"name": "Total Txns", "id": "Total Transactions", "type": "numeric"},
+                    {"name": "Quality", "id": "Quality Flag"}
+                ],
+                style_cell={'textAlign': 'left', 'padding': '8px'},
+                style_header={'backgroundColor': 'lightgrey', 'fontWeight': 'bold'},
+                style_data_conditional=[
+                    {
+                        'if': {'column_id': 'CAGR (%)', 'filter_query': '{CAGR (%)} > 0'},
+                        'backgroundColor': 'rgba(0, 255, 0, 0.2)',
+                    },
+                    {
+                        'if': {'column_id': 'CAGR (%)', 'filter_query': '{CAGR (%)} < 0'},
+                        'backgroundColor': 'rgba(255, 0, 0, 0.2)',
+                    },
+                    {
+                        'if': {'column_id': 'Quality Flag', 'filter_query': '{Quality Flag} contains "Review"'},
+                        'backgroundColor': 'rgba(255, 0, 0, 0.3)',
+                        'fontWeight': 'bold'
+                    },
+                    {
+                        'if': {'column_id': 'Quality Flag', 'filter_query': '{Quality Flag} contains "Thin"'},
+                        'backgroundColor': 'rgba(255, 165, 0, 0.2)',
+                    }
+                ]
+            )
+            
+            # Return table with a title
+            return html.Div([
+                html.H5(f"Room Type Breakdown: {project_name}", className="mt-3 mb-2"),
+                table
+            ], className="mb-4")
+            
+        except Exception as e:
+            print(f"Error in project drilldown callback: {e}")
+            import traceback
+            traceback.print_exc()
+            return html.Div(f"Error loading room breakdown: {str(e)}")
         
     @app.callback(
         [Output("area-comparison-graph", "children"),
          Output("area-comparison-insights", "children")],
         [Input("ltc-property-type-filter", "value"),
          Input("ltc-area-filter", "value"),
-         Input("ltc-developer-filter", "value")]
+         Input("ltc-developer-filter", "value"),
+         Input("ltc-room-type-filter", "value")]  # Added room type filter
     )
-    def update_project_area_comparison(property_type, area, developer):
-        from scripts.project_analysis import filter_project_data, create_area_performance_comparison, prepare_insights_metadata
+    def update_project_area_comparison(property_type, area, developer, room_type):
+        from scripts.project_analysis import prepare_project_data, create_area_performance_comparison, prepare_insights_metadata
         from scripts.insights import create_insights_component
         """Update area performance comparison visualization"""
-        if launch_completion_df is None:
-            return dcc.Graph(figure=create_default_figure("Area Performance Comparison", "No project data available")), html.Div("No data available")
+        
+        # Handle empty filter selections - default to 'All'
+        property_type = property_type if property_type else 'All'
+        area = area if area else 'All'
+        developer = developer if developer else 'All'
+        room_type = room_type if room_type else 'All'
         
         try:
-            # Apply filters
-            filtered_df = filter_project_data(
-                launch_completion_df,
+            # Re-process data with deed-level filtering
+            filtered_df = prepare_project_data(
                 property_type=property_type,
                 area=area,
-                developer=developer
+                developer=developer,
+                room_type=room_type
             )
+            
+            if len(filtered_df) == 0:
+                return dcc.Graph(
+                    figure=create_default_figure("Area Performance Comparison", "No projects match your current filters. Try adjusting your selection."),
+                    config={'responsive': True},
+                    style={'width': '100%', 'height': '100%'}
+                ), html.Div("No data available for insights")
             
             # Create visualization
             fig = create_area_performance_comparison(filtered_df)
@@ -1749,20 +1903,24 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
             
             # Add area-specific metrics
             if len(filtered_df) > 0:
-                area_stats = filtered_df.groupby('area_name_en')['price_sqft_cagr'].agg(['mean', 'count']).reset_index()
-                area_stats = area_stats.sort_values('mean', ascending=False)
+                area_stats = filtered_df.groupby('area_name_en')['cagr'].agg(['mean', 'count']).reset_index()
+                area_stats = area_stats[area_stats['count'] >= 3]  # Only areas with 3+ projects
                 
                 if len(area_stats) > 0:
+                    area_stats = area_stats.sort_values('mean', ascending=False)
                     top_area = area_stats.iloc[0]
+                    
                     metadata.update({
                         'area_count': len(area_stats),
                         'top_performing_area': top_area['area_name_en'],
                         'top_area_cagr': top_area['mean'],
                         'top_area_project_count': top_area['count'],
-                        'top_area_driver': 'waterfront premium and consistent demand',  # This could be enhanced with actual data
-                        'emerging_vs_established_premium': 2.3,  # This could be calculated from actual data
-                        'metro_premium_cagr': 1.5,  # This could be calculated from actual data
-                        'area_cov': area_stats['mean'].std() / area_stats['mean'].mean() if area_stats['mean'].mean() > 0 else 0.42
+                        'area_diversity_score': len(filtered_df['area_name_en'].unique()),
+                        'premium_area_multiplier': 1.5,  # This could be calculated from actual data
+                        'location_value_premium': 25,  # This could be calculated from actual data
+                        'top5_area_market_share': 42,  # This could be calculated from actual data
+                        'is_room_filtered': room_type != 'All',
+                        'filtered_room_type': room_type if room_type != 'All' else None
                     })
             
             # Generate insights
@@ -1773,7 +1931,8 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                 {
                     'property_type': property_type,
                     'area': area,
-                    'developer': developer
+                    'developer': developer,
+                    'room_type': room_type  # Added room type to filters
                 },
                 metadata
             )
@@ -1789,7 +1948,8 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                 style={
                     'width': '100%', 
                     'height': '100%',
-                    'minHeight': '500px'
+                    'minHeight': '500px',
+                    'marginBottom': '30px'  # Add margin to prevent overlap
                 },
                 className="responsive-chart"
             ), insights
@@ -1809,23 +1969,35 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
          Output("developer-comparison-insights", "children")],
         [Input("ltc-property-type-filter", "value"),
          Input("ltc-area-filter", "value"),
-         Input("ltc-developer-filter", "value")]
+         Input("ltc-developer-filter", "value"),
+         Input("ltc-room-type-filter", "value")]  # Added room type filter
     )
-    def update_project_developer_comparison(property_type, area, developer):
-        from scripts.project_analysis import filter_project_data, create_developer_track_record_analysis, prepare_insights_metadata
+    def update_project_developer_comparison(property_type, area, developer, room_type):
+        from scripts.project_analysis import prepare_project_data, create_developer_track_record_analysis, prepare_insights_metadata
         from scripts.insights import create_insights_component
         """Update developer track record comparison visualization"""
-        if launch_completion_df is None:
-            return dcc.Graph(figure=create_default_figure("Developer Track Record", "No project data available")), html.Div("No data available")
+        
+        # Handle empty filter selections - default to 'All'
+        property_type = property_type if property_type else 'All'
+        area = area if area else 'All'
+        developer = developer if developer else 'All'
+        room_type = room_type if room_type else 'All'
         
         try:
-            # Apply filters
-            filtered_df = filter_project_data(
-                launch_completion_df,
+            # Re-process data with deed-level filtering
+            filtered_df = prepare_project_data(
                 property_type=property_type,
                 area=area,
-                developer=developer
+                developer=developer,
+                room_type=room_type
             )
+            
+            if len(filtered_df) == 0:
+                return dcc.Graph(
+                    figure=create_default_figure("Developer Track Record", "No projects match your current filters. Try adjusting your selection."),
+                    config={'responsive': True},
+                    style={'width': '100%', 'height': '100%'}
+                ), html.Div("No data available for insights")
             
             # Create visualization
             fig = create_developer_track_record_analysis(filtered_df)
@@ -1835,7 +2007,7 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
             
             # Add developer-specific metrics
             if len(filtered_df) > 0:
-                dev_stats = filtered_df.groupby('developer_name')['price_sqft_cagr'].agg(['mean', 'count']).reset_index()
+                dev_stats = filtered_df.groupby('developer_name')['cagr'].agg(['mean', 'count']).reset_index()
                 dev_stats = dev_stats[dev_stats['count'] >= 2]  # Only developers with 2+ projects
                 
                 if len(dev_stats) > 0:
@@ -1844,7 +2016,7 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                     
                     # Calculate consistency metric
                     top_dev_projects = filtered_df[filtered_df['developer_name'] == top_dev['developer_name']]
-                    consistency = (top_dev_projects['price_sqft_cagr'] > filtered_df['price_sqft_cagr'].mean()).mean() * 100
+                    consistency = (top_dev_projects['cagr'] > filtered_df['cagr'].mean()).mean() * 100
                     
                     metadata.update({
                         'developer_count': len(dev_stats),
@@ -1854,7 +2026,9 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                         'top_developer_consistency': consistency,
                         'premium_developer_volatility_reduction': 35,  # This could be calculated from actual data
                         'experienced_developer_premium': 1.2,  # This could be calculated from actual data
-                        'top5_market_share': 42  # This could be calculated from actual data
+                        'top5_market_share': 42,  # This could be calculated from actual data
+                        'is_room_filtered': room_type != 'All',
+                        'filtered_room_type': room_type if room_type != 'All' else None
                     })
             
             # Generate insights
@@ -1865,19 +2039,39 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
                 {
                     'property_type': property_type,
                     'area': area,
-                    'developer': developer
+                    'developer': developer,
+                    'room_type': room_type  # Added room type to filters
                 },
                 metadata
             )
             
-            return dcc.Graph(figure=fig), insights
+            return dcc.Graph(
+                figure=fig,
+                config={
+                    'responsive': True,
+                    'displayModeBar': True,
+                    'displaylogo': False,
+                    'modeBarButtonsToRemove': ['pan2d', 'lasso2d']
+                },
+                style={
+                    'width': '100%', 
+                    'height': '100%',
+                    'minHeight': '500px',
+                    'marginBottom': '30px'  # Add margin to prevent overlap
+                },
+                className="responsive-chart"
+            ), insights
             
         except Exception as e:
             print(f"Error in developer comparison callback: {e}")
             import traceback
             traceback.print_exc()
-            return dcc.Graph(figure=create_default_figure("Developer Track Record", str(e))), html.Div("Error generating insights")
-        
+            return dcc.Graph(
+                figure=create_default_figure("Developer Track Record", str(e)),
+                config={'responsive': True},
+                style={'width': '100%', 'height': '100%'}
+            ), html.Div("Error generating insights")
+                
     #--------------------------
     # Investment Metrics Callback
     #--------------------------
@@ -1983,7 +2177,7 @@ def register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df=N
             opportunities_display = "--"
             try:
                 # Use our enhanced function that handles sparse data better
-                micro_segments, _ = perform_microsegment_analysis(filtered_df, growth_column=time_horizon)
+                micro_segments, _ = perform_microsegment_analysis(filtered_df, filters=filters, growth_column=time_horizon)
                 
                 if 'investment_score' in micro_segments.columns:
                     opportunities_count = (micro_segments['investment_score'] >= 70).sum()

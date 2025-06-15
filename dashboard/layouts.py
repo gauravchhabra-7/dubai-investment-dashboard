@@ -197,7 +197,7 @@ def create_sidebar_filters(df, tab_id="investment"):
         ])
         
     elif tab_id == "ltc":
-        # Project Analysis: Property Type, Area, Developer (NO Registration Type per request)
+        # Project Analysis: Property Type, Area, Developer, Room Type (ALL FOUR FILTERS)
         common_filters.extend([
             html.Div([
                 html.Label("Area", className="fw-bold mb-2"),
@@ -222,9 +222,21 @@ def create_sidebar_filters(df, tab_id="investment"):
                     className="mb-3 expandable-dropdown",
                     style={'position': 'relative', 'zIndex': 998}
                 )
+            ]),
+            html.Div([
+                html.Label("Room Configuration", className="fw-bold mb-2"),
+                dcc.Dropdown(
+                    id=room_id,
+                    options=[{'label': 'All', 'value': 'All'}] + 
+                            [{'label': r, 'value': r} for r in room_types],
+                    value='All',
+                    placeholder="Select room type...",
+                    className="mb-3 expandable-dropdown",
+                    style={'position': 'relative', 'zIndex': 997}
+                )
             ])
         ])
-        
+
     elif tab_id == "comp":
         # Comparative: Property Type, Area, Room Type, Registration Type, Developer, Time Horizon
         common_filters.extend([
@@ -324,19 +336,20 @@ def create_graph_container(id_base, fallback_message="No data available", min_he
                 style={
                     'width': '100%',
                     'minHeight': min_height,
-                    'height': 'auto'
+                    'height': 'auto',
+                    'paddingBottom': '40px'
                 }
             )
         ),
         html.Div(
             id=f"{id_base}-insights", 
             className="mt-4",
-            style={'width': '100%', 'padding': '15px 0'}
+            style={'width': '100%', 'padding': '15px 0', 'clear': 'both'}
         )
     ], style={
         'width': '100%',
         'height': 'auto',
-        'marginBottom': '20px'
+        'marginBottom': '40px'
     })
 
 def create_fallback_content(message="Data not available", height=400, show_data_quality=False):
@@ -571,29 +584,158 @@ def create_layout(df=None):
                         create_sidebar_filters(df, "ltc")
                     ], width=12, lg=3, className="mb-4 mb-lg-0"),
                     
-                    # Main content area with sub-tabs
+                    # Main content area
                     dbc.Col([
                         dbc.Card([
                             dbc.CardHeader(html.H5("Project Analysis", className="mb-0")),
                             dbc.CardBody([
                                 dbc.Tabs([
+                                    # ===== SUB-TAB 1: Individual Projects =====
                                     dbc.Tab([
                                         html.Div([
-                                            create_graph_container("project-appreciation", "Project performance data not available", "600px")
-                                        ], style={'width': '100%', 'padding': '20px 0'})
+                                            # Main Chart with Absolute Legend
+                                            html.Div([
+                                                dcc.Loading(
+                                                    id="project-appreciation-loading",
+                                                    type="circle",
+                                                    children=html.Div(
+                                                        id="project-appreciation-chart",
+                                                        style={
+                                                            'width': '100%',
+                                                            'minHeight': '500px',  # REDUCED from 600px
+                                                            'paddingBottom': '5px',  # REDUCED from 20px
+                                                            'position': 'relative'  # ADDED for absolute positioning
+                                                        }
+                                                    )
+                                                ),
+                                                # Absolute positioned legend
+                                                html.Div([
+                                                    html.H6("Legend", style={'fontSize': '12px', 'fontWeight': 'bold', 'marginBottom': '8px'}),
+                                                    html.Div([
+                                                        html.Div([html.Span("●", style={'color': 'darkblue', 'marginRight': '6px'}), "Normal"], style={'fontSize': '10px', 'marginBottom': '2px'}),
+                                                        html.Div([html.Span("●", style={'color': 'lightblue', 'marginRight': '6px'}), "Early Launch < 9mo"], style={'fontSize': '10px', 'marginBottom': '2px'}),
+                                                        html.Div([html.Span("●", style={'color': 'orange', 'marginRight': '6px'}), "Thin Data"], style={'fontSize': '10px', 'marginBottom': '2px'}),
+                                                        #html.Div([html.Span("●", style={'color': 'red', 'marginRight': '6px'}), "Review"], style={'fontSize': '10px', 'marginBottom': '2px'}),
+                                                        #html.Div([html.Span("●", style={'color': 'lightgray', 'marginRight': '6px'}), "Single"], style={'fontSize': '10px'})
+                                                    ])
+                                                ], style={
+                                                    'position': 'absolute',
+                                                    'top': '50px',
+                                                    'right': '20px',
+                                                    'backgroundColor': 'rgba(248, 249, 250, 0.9)',
+                                                    'padding': '10px',
+                                                    'borderRadius': '6px',
+                                                    'border': '1px solid #dee2e6',
+                                                    'width': '110px',
+                                                    'zIndex': 1000
+                                                })
+                                            ], style={'width': '100%', 'textAlign': 'center', 'position': 'relative'}),
+                                            
+                                            html.Div([
+                                                html.Div([
+                                                    html.I(className="fas fa-info-circle", style={'marginRight': '8px', 'color': '#1976d2'}),
+                                                    html.Strong("Interactive Feature: "),
+                                                    "Click on any project bar above to view detailed room-wise breakdown below."
+                                                ], style={
+                                                    'backgroundColor': '#e3f2fd',
+                                                    'padding': '12px',
+                                                    'borderRadius': '6px',
+                                                    'margin': '15px 0',
+                                                    'border': '1px solid #1976d2',
+                                                    'textAlign': 'center'
+                                                })
+                                            ]),
+                                            
+                                            # Drill-down Table (appears below chart on click)
+                                            html.Div(
+                                                id="project-drilldown-table",
+                                                style={
+                                                    'width': '100%',
+                                                    'padding': '10px 0',
+                                                    'clear': 'both'
+                                                }
+                                            ),
+                                            
+                                            # Insights Section
+                                            html.Div(
+                                                id="project-appreciation-insights",
+                                                className="mt-4",
+                                                style={
+                                                    'width': '100%',
+                                                    'padding': '20px 0',
+                                                    'clear': 'both',
+                                                    'borderTop': '1px solid #dee2e6'
+                                                }
+                                            )
+                                        ], style={'width': '100%', 'padding': '20px'})
                                     ], label="Individual Projects", tab_id="individual-projects-tab"),
                                     
+                                    # ===== SUB-TAB 2: Area Comparison =====
                                     dbc.Tab([
                                         html.Div([
-                                            create_graph_container("area-comparison", "Area comparison data not available", "600px")
-                                        ], style={'width': '100%', 'padding': '20px 0'})
+                                            # Main Chart - Center  
+                                            html.Div([
+                                                dcc.Loading(
+                                                    id="area-comparison-loading",
+                                                    type="circle",
+                                                    children=html.Div(
+                                                        id="area-comparison-graph",
+                                                        style={
+                                                            'width': '100%',
+                                                            'minHeight': '600px',
+                                                            'paddingBottom': '20px'
+                                                        }
+                                                    )
+                                                )
+                                            ], style={'width': '100%', 'textAlign': 'center'}),
+                                            
+                                            # Insights Section
+                                            html.Div(
+                                                id="area-comparison-insights",
+                                                className="mt-4",
+                                                style={
+                                                    'width': '100%',
+                                                    'padding': '20px 0',
+                                                    'clear': 'both',
+                                                    'borderTop': '1px solid #dee2e6'
+                                                }
+                                            )
+                                        ], style={'width': '100%', 'padding': '20px'})
                                     ], label="Area Comparison", tab_id="area-comparison-tab"),
                                     
+                                    # ===== SUB-TAB 3: Developer Analysis =====
                                     dbc.Tab([
                                         html.Div([
-                                            create_graph_container("developer-comparison", "Developer comparison data not available", "600px")
-                                        ], style={'width': '100%', 'padding': '20px 0'})
+                                            # Main Chart - Center
+                                            html.Div([
+                                                dcc.Loading(
+                                                    id="developer-comparison-loading",
+                                                    type="circle",
+                                                    children=html.Div(
+                                                        id="developer-comparison-graph",
+                                                        style={
+                                                            'width': '100%',
+                                                            'minHeight': '600px',
+                                                            'paddingBottom': '20px'
+                                                        }
+                                                    )
+                                                )
+                                            ], style={'width': '100%', 'textAlign': 'center'}),
+                                            
+                                            # Insights Section
+                                            html.Div(
+                                                id="developer-comparison-insights",
+                                                className="mt-4",
+                                                style={
+                                                    'width': '100%',
+                                                    'padding': '20px 0',
+                                                    'clear': 'both',
+                                                    'borderTop': '1px solid #dee2e6'
+                                                }
+                                            )
+                                        ], style={'width': '100%', 'padding': '20px'})
                                     ], label="Developer Analysis", tab_id="developer-analysis-tab"),
+                                    
                                 ], id="project-main-tabs")
                             ], style={'padding': '0', 'minHeight': '700px'})
                         ], style={'minHeight': '750px'})

@@ -1,762 +1,746 @@
+"""
+Project Analysis Module - Transaction-Based Adaptive CAGR Implementation
+=======================================================================
+
+This module implements adaptive CAGR calculation for real estate projects based on:
+- Age-dependent window lengths (31/92/183 days)
+- Median price calculations within windows
+- Business quality flags and validation rules
+- Full compatibility with existing dashboard interfaces
+
+Business Rules:
+- Age ≥ 547 days: 183-day windows, ≥5 deeds each
+- 183 ≤ age < 547: 92-day windows, ≥3 deeds each, 30-day gap required
+- Age < 183 days: 31-day windows, ≥2 deeds each
+- Price filter: 100 < meter_sale_price_sqft < 10,000 AED/ft²
+- Volume calculation: Sum of actual_worth in recent window
+"""
+
 import pandas as pd
 import numpy as np
-import plotly.express as px
+import os
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots
-import datetime
-from dash import html, dash_table
+from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
-def prepare_project_data(df):
-    """
-    Clean and enhance the project dataset for comprehensive analysis
-    
-    Args:
-        df (pd.DataFrame): Raw project dataset
-        
-    Returns:
-        pd.DataFrame: Cleaned and enhanced dataset with additional metrics
-    """
-    print("Preparing project data for analysis...")
-    
-    # Create a copy to avoid modifying original
-    enhanced_df = df.copy()
-    
-    # 1. Handle column name standardization
-    # Use area_name_en_x as primary and rename to area_name_en
-    if 'area_name_en_x' in enhanced_df.columns:
-        enhanced_df['area_name_en'] = enhanced_df['area_name_en_x']
-        # Drop the duplicate area columns
-        enhanced_df = enhanced_df.drop(['area_name_en_x'], axis=1, errors='ignore')
-        if 'area_name_en_y' in enhanced_df.columns:
-            enhanced_df = enhanced_df.drop(['area_name_en_y'], axis=1, errors='ignore')
-    
-    # 2. Data type conversions
-    # Convert date columns from string to datetime
-    date_columns = ['first_transaction_date', 'last_transaction_date', 'completion_date', 'project_start_date']
-    for col in date_columns:
-        if col in enhanced_df.columns:
-            enhanced_df[col] = pd.to_datetime(enhanced_df[col], errors='coerce')
-    
-    # Convert string boolean to actual boolean
-    if 'single_transaction' in enhanced_df.columns:
-        enhanced_df['single_transaction'] = enhanced_df['single_transaction'].map({
-            'True': True, 'False': False, True: True, False: False
-        })
-    
-    # 3. Handle missing data
-    # Fill missing developer names
-    if 'developer_name' in enhanced_df.columns:
-        enhanced_df['developer_name'] = enhanced_df['developer_name'].fillna('Unknown Developer')
-    
-    # Fill missing area names
-    if 'area_name_en' in enhanced_df.columns:
-        enhanced_df['area_name_en'] = enhanced_df['area_name_en'].fillna('Unknown Area')
-    
-    # 4. Calculate additional metrics
-    enhanced_df = calculate_peer_volatility(enhanced_df)
-    enhanced_df = calculate_market_outperformance(enhanced_df)
-    
-    # 5. Add data quality indicators (objective, not prescriptive)
-    enhanced_df['has_sufficient_transactions'] = enhanced_df['transaction_count'] >= 10
-    enhanced_df['is_long_term_data'] = enhanced_df['duration_years'] >= 1.0
-    enhanced_df['data_points_available'] = enhanced_df['transaction_count']
-    
-    print(f"Data preparation complete. Enhanced dataset has {len(enhanced_df)} project segments.")
-    print(f"Unique areas: {enhanced_df['area_name_en'].nunique()}")
-    print(f"Unique developers: {enhanced_df['developer_name'].nunique()}")
-    print(f"Property type combinations: {enhanced_df.groupby(['property_type_en', 'rooms_en']).size().count()}")
-    
-    return enhanced_df
+# Import configuration
+from config import get_path
 
-def calculate_peer_volatility(df):
-    """
-    Calculate volatility based on peer group performance (same property type + room type)
-    
-    Args:
-        df (pd.DataFrame): Project dataset
-        
-    Returns:
-        pd.DataFrame: Dataset with peer_volatility column added
-    """
-    df = df.copy()
-    df['peer_volatility'] = np.nan
-    
-    # Group by property type and room type to find peers
-    peer_groups = df.groupby(['property_type_en', 'rooms_en'])
-    
-    for (prop_type, room_type), group in peer_groups:
-        # Calculate standard deviation of CAGR within peer group
-        valid_cagrs = group['price_sqft_cagr'].dropna()
-        
-        if len(valid_cagrs) >= 3:  # Need at least 3 projects for meaningful volatility
-            volatility = valid_cagrs.std()
-            # Assign volatility to all projects in this peer group
-            mask = (df['property_type_en'] == prop_type) & (df['rooms_en'] == room_type)
-            df.loc[mask, 'peer_volatility'] = volatility
-        else:
-            # For peer groups with too few projects, use market-wide volatility
-            market_volatility = df['price_sqft_cagr'].std()
-            mask = (df['property_type_en'] == prop_type) & (df['rooms_en'] == room_type)
-            df.loc[mask, 'peer_volatility'] = market_volatility
-    
-    return df
+# Global cache for performance optimization
+_all_projects_cache = None
+_transaction_data_cache = None
 
-def calculate_market_outperformance(df):
+# =============================================================================
+# CORE DATA LOADING AND PREPROCESSING
+# =============================================================================
+
+def load_transaction_data():
     """
-    Calculate how each project performs vs transaction-weighted average of peers
+    Load and cache transaction data for project analysis
+    
+    Returns:
+        pd.DataFrame: Cleaned transaction data with proper dtypes
+    """
+    global _transaction_data_cache
+    
+    if _transaction_data_cache is not None:
+        return _transaction_data_cache.copy()
+    
+    try:
+        # Load data using config path
+        data_path = get_path('project_txn_data')
+        if not os.path.exists(data_path):
+            raise FileNotFoundError(f"Transaction data not found at: {data_path}")
+        
+        print(f"Loading transaction data from: {data_path}")
+        df = pd.read_csv(data_path)
+        
+        # Smart date parsing
+        df['instance_date'] = pd.to_datetime(df['instance_date'], errors='coerce')
+        
+        # Remove records with invalid dates
+        initial_count = len(df)
+        df = df.dropna(subset=['instance_date'])
+        if len(df) < initial_count:
+            print(f"Removed {initial_count - len(df)} records with invalid dates")
+        
+        # Price filtering (using meter_sale_price_sqft as specified)
+        price_col = 'meter_sale_price_sqft'
+        if price_col not in df.columns:
+            raise ValueError(f"Required price column '{price_col}' not found in data")
+        
+        # Apply price range filter
+        initial_count = len(df)
+        df = df[(df[price_col] > 100) & (df[price_col] < 10000)].copy()
+        print(f"Applied price filter (100-10,000): {initial_count} → {len(df)} records")
+        
+        # Ensure required columns exist
+        required_cols = [
+            'project_number_int', 'project_name_en', 'developer_name', 
+            'area_name_en', 'instance_date', price_col, 'actual_worth'
+        ]
+        
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            raise ValueError(f"Missing required columns: {missing_cols}")
+        
+        # Remove records with missing critical data
+        df = df.dropna(subset=required_cols)
+        
+        # Sort by project and date for efficient processing
+        df = df.sort_values(['project_number_int', 'instance_date'])
+        
+        # Cache the cleaned data
+        _transaction_data_cache = df
+        print(f"Successfully loaded and cached {len(df):,} transaction records")
+        
+        return df.copy()
+        
+    except Exception as e:
+        print(f"Error loading transaction data: {e}")
+        raise
+
+def get_project_age_category(start_date, end_date):
+    """
+    Determine project age category and corresponding window parameters
     
     Args:
-        df (pd.DataFrame): Project dataset
+        start_date (datetime): Project start date
+        end_date (datetime): Project end date
         
     Returns:
-        pd.DataFrame: Dataset with market_outperformance column added
+        dict: Window parameters based on project age
     """
-    df = df.copy()
-    df['market_outperformance'] = np.nan
-    df['peer_weighted_average'] = np.nan
+    age_days = (end_date - start_date).days
     
-    # Group by property type and room type for peer comparison
-    peer_groups = df.groupby(['property_type_en', 'rooms_en'])
+    if age_days >= 547:  # ≥ 18 months
+        return {
+            'age_days': age_days,
+            'window_length': 183,
+            'min_deeds': 5,
+            'category': 'mature',
+            'requires_gap': False
+        }
+    elif age_days >= 183:  # 6-18 months
+        return {
+            'age_days': age_days,
+            'window_length': 92,
+            'min_deeds': 3,
+            'category': 'medium',
+            'requires_gap': True
+        }
+    else:  # < 6 months
+        return {
+            'age_days': age_days,
+            'window_length': 31,
+            'min_deeds': 2,
+            'category': 'young',
+            'requires_gap': False
+        }
+
+def calculate_window_bounds(project_txns, window_params):
+    """
+    Calculate first and recent window bounds with gap checking
     
-    for (prop_type, room_type), group in peer_groups:
-        # Calculate transaction-weighted average CAGR for peer group
-        valid_data = group.dropna(subset=['price_sqft_cagr', 'transaction_count'])
+    Args:
+        project_txns (pd.DataFrame): Project transactions sorted by date
+        window_params (dict): Window parameters from get_project_age_category
         
-        if len(valid_data) >= 2:  # Need at least 2 projects for comparison
-            # Transaction-weighted average
-            total_weighted_cagr = (valid_data['price_sqft_cagr'] * valid_data['transaction_count']).sum()
-            total_weights = valid_data['transaction_count'].sum()
+    Returns:
+        dict: Window bounds and validation results
+    """
+    if len(project_txns) == 0:
+        return None
+    
+    start_date = project_txns['instance_date'].min()
+    end_date = project_txns['instance_date'].max()
+    window_len = window_params['window_length']
+    
+    # Calculate initial window bounds
+    first_window_start = start_date
+    first_window_end = start_date + timedelta(days=window_len)
+    
+    recent_window_start = end_date - timedelta(days=window_len)
+    recent_window_end = end_date
+    
+    # Check for gap requirement (medium-age projects)
+    if window_params['requires_gap']:
+        gap_days = (recent_window_start - first_window_end).days
+        
+        if gap_days < 30:
+            # Push recent window forward to maintain 30-day gap
+            adjustment_days = 30 - gap_days
+            recent_window_start = recent_window_start + timedelta(days=adjustment_days)
+            recent_window_end = recent_window_end + timedelta(days=adjustment_days)
             
-            if total_weights > 0:
-                weighted_avg_cagr = total_weighted_cagr / total_weights
-                
-                # Calculate outperformance for each project in this peer group
-                mask = (df['property_type_en'] == prop_type) & (df['rooms_en'] == room_type)
-                df.loc[mask, 'peer_weighted_average'] = weighted_avg_cagr
-                df.loc[mask, 'market_outperformance'] = df.loc[mask, 'price_sqft_cagr'] - weighted_avg_cagr
+            # Ensure recent window doesn't exceed project end
+            if recent_window_end > end_date:
+                recent_window_end = end_date
+                recent_window_start = recent_window_end - timedelta(days=window_len)
     
-    return df
+    return {
+        'first_window_start': first_window_start,
+        'first_window_end': first_window_end,
+        'recent_window_start': recent_window_start,
+        'recent_window_end': recent_window_end,
+        'window_length_days': window_len
+    }
 
-def filter_project_data(df, property_type=None, room_type=None, area=None, developer=None, 
-                       min_duration=None, max_duration=None, min_transactions=None):
+def get_window_transactions(project_txns, window_bounds):
     """
-    Apply filters to the project dataset
+    Extract transactions within specific windows
     
     Args:
-        df (pd.DataFrame): Project dataset
-        property_type (str): Filter by property type
-        room_type (str): Filter by room configuration  
-        area (str): Filter by area
-        developer (str): Filter by developer
-        min_duration (float): Minimum duration in years
-        max_duration (float): Maximum duration in years
-        min_transactions (int): Minimum transaction count
+        project_txns (pd.DataFrame): Project transactions
+        window_bounds (dict): Window bounds from calculate_window_bounds
         
     Returns:
-        pd.DataFrame: Filtered dataset
+        tuple: (first_window_txns, recent_window_txns)
     """
-    filtered_df = df.copy()
+    first_window = project_txns[
+        (project_txns['instance_date'] >= window_bounds['first_window_start']) &
+        (project_txns['instance_date'] <= window_bounds['first_window_end'])
+    ].copy()
     
-    # Apply filters only if values are provided and not 'All'
-    if property_type and property_type != 'All':
+    recent_window = project_txns[
+        (project_txns['instance_date'] >= window_bounds['recent_window_start']) &
+        (project_txns['instance_date'] <= window_bounds['recent_window_end'])
+    ].copy()
+    
+    return first_window, recent_window
+
+def calculate_window_median_price(window_txns):
+    """
+    Calculate median price for a window
+    
+    Args:
+        window_txns (pd.DataFrame): Transactions in the window
+        
+    Returns:
+        float: Median price per sqft or None if insufficient data
+    """
+    if len(window_txns) == 0:
+        return None
+    
+    return window_txns['meter_sale_price_sqft'].median()
+
+def calculate_cagr(first_price, recent_price, first_midpoint, recent_midpoint):
+    """
+    Calculate CAGR between two price points
+    
+    Args:
+        first_price (float): Initial price
+        recent_price (float): Recent price
+        first_midpoint (datetime): Midpoint of first window
+        recent_midpoint (datetime): Midpoint of recent window
+        
+    Returns:
+        float: CAGR as percentage or None if invalid
+    """
+    if first_price is None or recent_price is None or first_price <= 0:
+        return None
+    
+    # Calculate time difference in days
+    delta_days = (recent_midpoint - first_midpoint).days
+    
+    if delta_days <= 0:
+        return None
+    
+    # Convert to annual growth rate
+    years = delta_days / 365.25
+    if years <= 0:
+        return None
+    
+    try:
+        cagr = ((recent_price / first_price) ** (1 / years) - 1) * 100
+        return cagr
+    except (ZeroDivisionError, ValueError, OverflowError):
+        return None
+
+# =============================================================================
+# MAIN PROJECT METRICS CALCULATION
+# =============================================================================
+
+def calculate_project_metrics(txn_df, room_type_filter='All'):
+    """
+    Calculate adaptive CAGR metrics for all projects
+    
+    Args:
+        txn_df (pd.DataFrame): Transaction data
+        room_type_filter (str): Room type filter ('All' or specific room type)
+        
+    Returns:
+        pd.DataFrame: Project metrics with adaptive CAGR calculations
+    """
+    print(f"Calculating project metrics for {len(txn_df):,} transactions...")
+    
+    # Apply room type filter if specified
+    if room_type_filter != 'All' and 'rooms_en' in txn_df.columns:
+        txn_df = txn_df[txn_df['rooms_en'] == room_type_filter].copy()
+        print(f"Filtered to {len(txn_df):,} transactions for room type: {room_type_filter}")
+    
+    project_results = []
+    
+    # Group by project
+    for project_id, project_txns in txn_df.groupby('project_number_int'):
+        try:
+            if len(project_txns) < 2:
+                # Handle single transaction case
+                project_info = project_txns.iloc[0]
+                result = {
+                    'project_number_int': project_id,
+                    'project_name_en': project_info.get('project_name_en', f'Project {project_id}'),
+                    'developer_name': project_info.get('developer_name', 'Unknown'),
+                    'area_name_en': project_info.get('area_name_en', 'Unknown'),
+                    'property_type_en': project_info.get('property_type_en', 'Unknown'),
+                    'age_days': 0,
+                    'first_deeds': 1,
+                    'recent_deeds': 1,
+                    'window_len_days': 0,
+                    'cagr': 0.0,
+                    'launch_price_sqft': project_info['meter_sale_price_sqft'],
+                    'recent_price_sqft': project_info['meter_sale_price_sqft'],
+                    'is_early_launch': True,
+                    'is_thin': True,
+                    'needs_review': False,
+                    'first_window_start': project_info['instance_date'],
+                    'first_window_end': project_info['instance_date'],
+                    'recent_window_start': project_info['instance_date'],
+                    'recent_window_end': project_info['instance_date'],
+                    'recent_aed_volume': project_info.get('actual_worth', 0),
+                    'transaction_count': 1,
+                    'single_transaction': True
+                }
+                project_results.append(result)
+                continue
+            
+            # Sort transactions by date
+            project_txns = project_txns.sort_values('instance_date')
+            
+            # Get project metadata
+            project_info = project_txns.iloc[0]
+            start_date = project_txns['instance_date'].min()
+            end_date = project_txns['instance_date'].max()
+            
+            # Determine window parameters based on project age
+            window_params = get_project_age_category(start_date, end_date)
+            
+            # Calculate window bounds
+            window_bounds = calculate_window_bounds(project_txns, window_params)
+            if window_bounds is None:
+                continue
+            
+            # Extract window transactions
+            first_window, recent_window = get_window_transactions(project_txns, window_bounds)
+            
+            # Check minimum deed requirements
+            first_deeds = len(first_window)
+            recent_deeds = len(recent_window)
+            min_deeds = window_params['min_deeds']
+            
+            # Calculate window median prices
+            first_price = calculate_window_median_price(first_window)
+            recent_price = calculate_window_median_price(recent_window)
+            
+            # Calculate window midpoints for CAGR calculation
+            first_midpoint = window_bounds['first_window_start'] + timedelta(
+                days=window_params['window_length'] / 2
+            )
+            recent_midpoint = window_bounds['recent_window_start'] + timedelta(
+                days=window_params['window_length'] / 2
+            )
+            
+            # Calculate CAGR
+            cagr = calculate_cagr(first_price, recent_price, first_midpoint, recent_midpoint)
+            
+            # Calculate recent window volume
+            recent_volume = recent_window['actual_worth'].sum() if len(recent_window) > 0 else 0
+            
+            # Apply business flags
+            is_early_launch = window_params['age_days'] < 270  # < 9 months
+            is_thin = (first_deeds < min_deeds) or (recent_deeds < min_deeds)
+            needs_review = cagr is not None and abs(cagr) > 400
+            
+            # Handle extreme CAGR values
+            if needs_review:
+                cagr = 0.0
+            
+            # Create project result
+            result = {
+                'project_number_int': project_id,
+                'project_name_en': project_info.get('project_name_en', f'Project {project_id}'),
+                'developer_name': project_info.get('developer_name', 'Unknown'),
+                'area_name_en': project_info.get('area_name_en', 'Unknown'),
+                'property_type_en': project_info.get('property_type_en', 'Unknown'),
+                'age_days': window_params['age_days'],
+                'first_deeds': first_deeds,
+                'recent_deeds': recent_deeds,
+                'window_len_days': window_params['window_length'],
+                'cagr': cagr if cagr is not None else 0.0,
+                'launch_price_sqft': first_price if first_price is not None else 0.0,
+                'recent_price_sqft': recent_price if recent_price is not None else 0.0,
+                'is_early_launch': is_early_launch,
+                'is_thin': is_thin,
+                'needs_review': needs_review,
+                'first_window_start': window_bounds['first_window_start'],
+                'first_window_end': window_bounds['first_window_end'],
+                'recent_window_start': window_bounds['recent_window_start'],
+                'recent_window_end': window_bounds['recent_window_end'],
+                'recent_aed_volume': recent_volume,
+                'transaction_count': len(project_txns),
+                'single_transaction': False
+            }
+            
+            project_results.append(result)
+            
+        except Exception as e:
+            print(f"Error processing project {project_id}: {e}")
+            continue
+    
+    if not project_results:
+        print("No valid projects found for analysis")
+        return pd.DataFrame()
+    
+    # Create DataFrame
+    results_df = pd.DataFrame(project_results)
+    
+    print(f"Successfully calculated metrics for {len(results_df)} projects")
+    print(f"Early launch projects: {results_df['is_early_launch'].sum()}")
+    print(f"Thin data projects: {results_df['is_thin'].sum()}")
+    print(f"Projects needing review: {results_df['needs_review'].sum()}")
+    
+    return results_df
+
+# =============================================================================
+# FILTERING AND DATA PREPARATION
+# =============================================================================
+
+def apply_deed_filters(txn_df, property_type='All', area='All', developer='All', room_type='All'):
+    """
+    Apply filters at the transaction level
+    
+    Args:
+        txn_df (pd.DataFrame): Transaction data
+        property_type (str): Property type filter
+        area (str): Area filter
+        developer (str): Developer filter
+        room_type (str): Room type filter
+        
+    Returns:
+        pd.DataFrame: Filtered transaction data
+    """
+    filtered_df = txn_df.copy()
+    
+    if property_type != 'All' and 'property_type_en' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['property_type_en'] == property_type]
     
-    if room_type and room_type != 'All':
-        filtered_df = filtered_df[filtered_df['rooms_en'] == room_type]
-    
-    if area and area != 'All':
+    if area != 'All' and 'area_name_en' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['area_name_en'] == area]
     
-    if developer and developer != 'All':
+    if developer != 'All' and 'developer_name' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['developer_name'] == developer]
     
-    if min_duration is not None:
-        filtered_df = filtered_df[filtered_df['duration_years'] >= min_duration]
-    
-    if max_duration is not None:
-        filtered_df = filtered_df[filtered_df['duration_years'] <= max_duration]
-    
-    if min_transactions is not None:
-        filtered_df = filtered_df[filtered_df['transaction_count'] >= min_transactions]
+    if room_type != 'All' and 'rooms_en' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['rooms_en'] == room_type]
     
     return filtered_df
 
-def validate_and_clean_data(df):
+def add_compatibility_columns(project_df):
     """
-    Validate and clean data to remove extreme outliers and errors
+    Add columns for backward compatibility with existing dashboard code
     
     Args:
-        df (pd.DataFrame): Input dataframe
+        project_df (pd.DataFrame): Project metrics DataFrame
         
     Returns:
-        pd.DataFrame: Cleaned dataframe
+        pd.DataFrame: DataFrame with compatibility columns added
     """
-    if df is None or len(df) == 0:
-        return df
+    if len(project_df) == 0:
+        return project_df
     
-    # Create a copy
-    clean_df = df.copy()
+    # Add compatibility columns
+    project_df = project_df.copy()
     
-    # Remove rows with missing essential data
-    essential_columns = ['price_sqft_cagr', 'project_name_en']
-    clean_df = clean_df.dropna(subset=[col for col in essential_columns if col in clean_df.columns])
+    # Legacy naming compatibility
+    project_df['price_sqft_cagr'] = project_df['cagr']
+    project_df['has_quality_concerns'] = project_df['is_thin'] | project_df['needs_review']
+    project_df['is_illiquid'] = project_df['is_thin']  # Alias for dashboard compatibility
+    project_df['duration_years'] = project_df['age_days'] / 365.25
     
-    # Filter CAGR outliers (keep reasonable range: -50% to +50%)
-    if 'price_sqft_cagr' in clean_df.columns:
-        clean_df = clean_df[
-            (clean_df['price_sqft_cagr'] >= -50) & 
-            (clean_df['price_sqft_cagr'] <= 50)
-        ]
-    
-    # Ensure transaction count is reasonable (1 to 10000)
-    if 'transaction_count' in clean_df.columns:
-        clean_df = clean_df[
-            (clean_df['transaction_count'] >= 1) & 
-            (clean_df['transaction_count'] <= 10000)
-        ]
-    
-    # Clean text fields - remove any pandas Series artifacts
-    text_columns = ['project_name_en', 'area_name_en', 'developer_name']
-    for col in text_columns:
-        if col in clean_df.columns:
-            # Convert to string and clean
-            clean_df[col] = clean_df[col].astype(str).str.strip()
-            # Remove any entries that look like pandas Series representations
-            clean_df = clean_df[~clean_df[col].str.contains('Name:|dtype:', na=False)]
-    
-    return clean_df
+    return project_df
 
-def create_individual_project_analysis(df, title="Individual Project Performance Analysis"):
+def apply_quality_filters(project_df, has_room_filter=False):
     """
-    Create horizontal bar chart for top individual project performance
+    Apply quality filters and sort results
     
     Args:
-        df (pd.DataFrame): Filtered project dataset
-        title (str): Chart title
+        project_df (pd.DataFrame): Project metrics DataFrame
+        has_room_filter (bool): Whether room type filter was applied
         
     Returns:
-        go.Figure: Plotly figure with top project performance
+        pd.DataFrame: Filtered and sorted DataFrame
     """
-    if df is None or len(df) == 0:
-        return create_empty_figure("No projects available for the selected filters")
-    
-    # Clean and validate data first
-    clean_df = validate_and_clean_data(df)
-    
-    if len(clean_df) == 0:
-        return create_empty_figure("No valid data after cleaning outliers")
-    
-    # Filter for quality data (minimum 5 transactions for reliability)
-    quality_df = clean_df[clean_df['transaction_count'] >= 5].copy()
-    
-    if len(quality_df) < 5:
-        # If not enough quality data, use all cleaned data but with warning
-        quality_df = clean_df.copy()
-        data_quality_note = " (Limited transaction data)"
-    else:
-        data_quality_note = ""
-    
-    # Sort by CAGR and take top 15
-    top_projects = quality_df.nlargest(15, 'price_sqft_cagr').iloc[::-1].copy()
-    
-    # Create clean project labels
-    def create_project_label(row):
-        """Create clean project label"""
-        try:
-            project_name = str(row['project_name_en']).strip()
-            area_name = str(row['area_name_en']).strip()
-            
-            # Handle long names
-            if len(project_name) > 30:
-                project_name = project_name[:27] + "..."
-            if len(area_name) > 20:
-                area_name = area_name[:17] + "..."
-                
-            return f"{project_name} ({area_name})"
-        except:
-            return "Unknown Project"
-    
-    top_projects['project_label'] = top_projects.apply(create_project_label, axis=1)
-    
-    # Create horizontal bar chart
-    fig = go.Figure()
-    
-    # Create color array based on transaction count
-    transaction_counts = top_projects['transaction_count'].fillna(0)
-    
-    fig.add_trace(go.Bar(
-        y=top_projects['project_label'],
-        x=top_projects['price_sqft_cagr'],
-        orientation='h',
-        marker=dict(
-            color=transaction_counts,
-            colorscale='Viridis',
-            colorbar=dict(
-                title="Transaction<br>Count",
-                titleside="right"
-            ),
-            line=dict(color='rgba(50,50,50,0.8)', width=0.5)
-        ),
-        text=[f"{val:.1f}%" for val in top_projects['price_sqft_cagr']],
-        textposition='outside',
-        textfont=dict(size=10),
-        hovertemplate=(
-            '<b>%{y}</b><br>' +
-            'CAGR: %{x:.1f}%<br>' +
-            'Transactions: %{marker.color}<br>' +
-            'Duration: %{customdata[0]:.1f} years<br>' +
-            'Market Outperformance: %{customdata[1]:.1f}%<br>' +
-            '<extra></extra>'
-        ),
-        customdata=np.column_stack((
-            top_projects['duration_years'].fillna(0),
-            top_projects['market_outperformance'].fillna(0)
-        ))
-    ))
-    
-    # Add vertical line at 0%
-    fig.add_vline(x=0, line_dash="dash", line_color="gray", annotation_text="0% Return")
-    
-    # Set reasonable x-axis range
-    max_cagr = top_projects['price_sqft_cagr'].max()
-    min_cagr = top_projects['price_sqft_cagr'].min()
-    x_range = [min(min_cagr - 2, -5), max(max_cagr + 2, 25)]
-    
-    # Update layout
-    fig.update_layout(
-        title=f"{title}{data_quality_note}",
-        xaxis_title="Annualized Return (CAGR %)",
-        yaxis_title="Project",
-        height=max(500, len(top_projects) * 35 + 150),
-        showlegend=False,
-        autosize=True,     
-        width=None,  
-        yaxis=dict(
-            tickmode='linear',
-            automargin=True
-        ),
-        xaxis=dict(
-            tickformat='.1f',
-            ticksuffix='%',
-            range=x_range
-        ),
-        margin=dict(l=250, r=120, t=80, b=120)
-    )
-    
-    # Add subtitle with data info
-    total_projects = len(clean_df)
-    fig.add_annotation(
-        text=f"Showing top 15 of {total_projects} projects (ranked by CAGR)",
-        xref="paper", yref="paper",
-        x=0.5, y=-0.18,
-        showarrow=False,
-        font=dict(size=12, color="gray"),
-        xanchor="center"
-    )
-    
-    return fig
-
-def create_area_performance_comparison(df, title="Area Performance Comparison"):
-    """
-    Create horizontal bar chart for area performance comparison
-    
-    Args:
-        df (pd.DataFrame): Filtered project dataset
-        title (str): Chart title
-        
-    Returns:
-        go.Figure: Plotly figure with area comparison
-    """
-    if df is None or len(df) == 0:
-        return create_empty_figure("No data available for area comparison")
-    
-    # Clean and validate data first
-    clean_df = validate_and_clean_data(df)
-    
-    if len(clean_df) == 0:
-        return create_empty_figure("No valid data after cleaning")
-    
-    # Group by area and calculate key metrics
-    try:
-        area_stats = clean_df.groupby('area_name_en').agg({
-            'price_sqft_cagr': ['mean', 'count', 'std'],
-            'market_outperformance': 'mean',
-            'transaction_count': 'sum',
-            'duration_years': 'mean'
-        }).round(2)
-        
-        # Flatten column names properly
-        area_stats.columns = ['avg_cagr', 'project_count', 'cagr_volatility', 
-                             'avg_outperformance', 'total_transactions', 'avg_duration']
-        area_stats = area_stats.reset_index()
-        
-        # Filter areas with at least 3 projects for meaningful comparison
-        area_stats = area_stats[area_stats['project_count'] >= 3].copy()
-        
-        if len(area_stats) == 0:
-            return create_empty_figure("Insufficient data for area comparison (need ≥3 projects per area)")
-        
-        # Sort by average CAGR and take top 15
-        top_areas = area_stats.nlargest(15, 'avg_cagr').iloc[::-1].copy()
-        
-        # Create clean area labels
-        def create_area_label(row):
-            """Create clean area label"""
-            try:
-                area_name = str(row['area_name_en']).strip()
-                project_count = int(row['project_count'])
-                
-                # Handle long area names
-                if len(area_name) > 25:
-                    area_name = area_name[:22] + "..."
-                    
-                return f"{area_name} ({project_count} projects)"
-            except:
-                return "Unknown Area"
-        
-        top_areas['area_label'] = top_areas.apply(create_area_label, axis=1)
-        
-        # Create horizontal bar chart
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            y=top_areas['area_label'],
-            x=top_areas['avg_cagr'],
-            orientation='h',
-            marker=dict(
-                color=top_areas['total_transactions'],
-                colorscale='Blues',
-                colorbar=dict(
-                    title="Total<br>Transactions",
-                    titleside="right"
-                ),
-                line=dict(color='rgba(50,50,50,0.8)', width=0.5)
-            ),
-            text=[f"{val:.1f}%" for val in top_areas['avg_cagr']],
-            textposition='outside',
-            textfont=dict(size=10),
-            hovertemplate=(
-                '<b>%{y}</b><br>' +
-                'Average CAGR: %{x:.1f}%<br>' +
-                'Total Transactions: %{marker.color}<br>' +
-                'Project Count: %{customdata[0]}<br>' +
-                'Volatility: %{customdata[1]:.1f}%<br>' +
-                '<extra></extra>'
-            ),
-            customdata=np.column_stack((
-                top_areas['project_count'],
-                top_areas['cagr_volatility'].fillna(0)
-            ))
-        ))
-        
-        # Add vertical line at 0%
-        fig.add_vline(x=0, line_dash="dash", line_color="gray", annotation_text="0% Return")
-        
-        # Set reasonable x-axis range
-        max_cagr = top_areas['avg_cagr'].max()
-        min_cagr = top_areas['avg_cagr'].min()
-        x_range = [min(min_cagr - 1, -5), max(max_cagr + 1, 20)]
-        
-        # Update layout
-        fig.update_layout(
-            title=title,
-            xaxis_title="Average CAGR (%)",
-            yaxis_title="Area",
-            height=max(500, len(top_areas) * 35 + 150),
-            showlegend=False,
-            autosize=True,    
-            width=None,  
-            yaxis=dict(
-                tickmode='linear',
-                automargin=True
-            ),
-            xaxis=dict(
-                tickformat='.1f',
-                ticksuffix='%',
-                range=x_range
-            ),
-            margin=dict(l=300, r=120, t=80, b=120)
-        )
-        
-        # Add subtitle with data info
-        total_areas = len(area_stats)
-        fig.add_annotation(
-            text=f"Showing top 15 of {total_areas} areas with ≥3 projects each",
-            xref="paper", yref="paper",
-            x=0.5, y=-0.18,
-            showarrow=False,
-            font=dict(size=12, color="gray"),
-            xanchor="center"
-        )
-        
-        return fig
-        
-    except Exception as e:
-        print(f"Error in area comparison: {e}")
-        return create_empty_figure(f"Error creating area comparison: {str(e)}")
-
-def create_developer_track_record_analysis(df, title="Developer Track Record Analysis"):
-    """
-    Create horizontal bar chart for developer track record comparison
-    
-    Args:
-        df (pd.DataFrame): Filtered project dataset
-        title (str): Chart title
-        
-    Returns:
-        go.Figure: Plotly figure with developer comparison
-    """
-    if df is None or len(df) == 0:
-        return create_empty_figure("No data available for developer comparison")
-    
-    # Clean and validate data first
-    clean_df = validate_and_clean_data(df)
-    
-    if len(clean_df) == 0:
-        return create_empty_figure("No valid data after cleaning")
-    
-    try:
-        # Group by developer and calculate portfolio metrics
-        dev_stats = clean_df.groupby('developer_name').agg({
-            'price_sqft_cagr': ['mean', 'count', 'std', 'min', 'max'],
-            'market_outperformance': 'mean',
-            'transaction_count': 'sum',
-            'duration_years': 'mean'
-        }).round(2)
-        
-        # Flatten column names properly
-        dev_stats.columns = ['avg_cagr', 'project_count', 'cagr_volatility', 'min_cagr', 'max_cagr',
-                            'avg_outperformance', 'total_transactions', 'avg_duration']
-        dev_stats = dev_stats.reset_index()
-        
-        # Filter developers with at least 2 projects
-        dev_stats = dev_stats[dev_stats['project_count'] >= 2].copy()
-        
-        if len(dev_stats) == 0:
-            return create_empty_figure("Insufficient data for developer comparison (need ≥2 projects per developer)")
-        
-        # Calculate consistency score (lower volatility = higher consistency)
-        max_volatility = dev_stats['cagr_volatility'].max()
-        if max_volatility > 0:
-            dev_stats['consistency_score'] = 100 * (1 - dev_stats['cagr_volatility'] / max_volatility)
-        else:
-            dev_stats['consistency_score'] = 100
-        dev_stats['consistency_score'] = dev_stats['consistency_score'].fillna(100)
-        
-        # Sort by average CAGR and take top 15
-        top_developers = dev_stats.nlargest(15, 'avg_cagr').iloc[::-1].copy()
-        
-        # Create clean developer labels
-        def create_developer_label(row):
-            """Create clean developer label"""
-            try:
-                dev_name = str(row['developer_name']).strip()
-                project_count = int(row['project_count'])
-                
-                # Handle long developer names
-                if len(dev_name) > 25:
-                    dev_name = dev_name[:22] + "..."
-                    
-                return f"{dev_name} ({project_count} projects)"
-            except:
-                return "Unknown Developer"
-        
-        top_developers['dev_label'] = top_developers.apply(create_developer_label, axis=1)
-        
-        # Create horizontal bar chart
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            y=top_developers['dev_label'],
-            x=top_developers['avg_cagr'],
-            orientation='h',
-            marker=dict(
-                color=top_developers['consistency_score'],
-                colorscale='RdYlGn',
-                colorbar=dict(
-                    title="Consistency<br>Score",
-                    titleside="right"
-                ),
-                line=dict(color='rgba(50,50,50,0.8)', width=0.5)
-            ),
-            text=[f"{val:.1f}%" for val in top_developers['avg_cagr']],
-            textposition='outside',
-            textfont=dict(size=10),
-            hovertemplate=(
-                '<b>%{y}</b><br>' +
-                'Average CAGR: %{x:.1f}%<br>' +
-                'Consistency Score: %{marker.color:.0f}<br>' +
-                'Best Project: %{customdata[0]:.1f}%<br>' +
-                'Worst Project: %{customdata[1]:.1f}%<br>' +
-                'Total Transactions: %{customdata[2]}<br>' +
-                '<extra></extra>'
-            ),
-            customdata=np.column_stack((
-                top_developers['max_cagr'],
-                top_developers['min_cagr'],
-                top_developers['total_transactions']
-            ))
-        ))
-        
-        # Add vertical line at 0%
-        fig.add_vline(x=0, line_dash="dash", line_color="gray", annotation_text="0% Return")
-        
-        # Set reasonable x-axis range
-        max_cagr = top_developers['avg_cagr'].max()
-        min_cagr = top_developers['avg_cagr'].min()
-        x_range = [min(min_cagr - 1, -5), max(max_cagr + 1, 20)]
-        
-        # Update layout
-        fig.update_layout(
-            title=title,
-            xaxis_title="Average Portfolio CAGR (%)",
-            yaxis_title="Developer",
-            height=max(500, len(top_developers) * 35 + 150),
-            showlegend=False,
-            yaxis=dict(
-                tickmode='linear',
-                automargin=True
-            ),
-            xaxis=dict(
-                tickformat='.1f',
-                ticksuffix='%',
-                range=x_range
-            ),
-            margin=dict(l=350, r=120, t=80, b=120)
-        )
-        
-        # Add subtitle with data info
-        total_developers = len(dev_stats)
-        fig.add_annotation(
-            text=f"Showing top 15 of {total_developers} developers with ≥2 projects each",
-            xref="paper", yref="paper",
-            x=0.5, y=-0.18,
-            showarrow=False,
-            font=dict(size=12, color="gray"),
-            xanchor="center"
-        )
-        
-        return fig
-        
-    except Exception as e:
-        print(f"Error in developer comparison: {e}")
-        return create_empty_figure(f"Error creating developer comparison: {str(e)}")
-
-def create_project_performance_table(df, max_rows=20):
-    """
-    Create a detailed data table showing project performance metrics
-    
-    Args:
-        df (pd.DataFrame): Filtered project dataset
-        max_rows (int): Maximum number of rows to display
-        
-    Returns:
-        dash_table.DataTable: Interactive data table
-    """
-    if df is None or len(df) == 0:
-        return html.Div("No data available for table display")
-    
-    # Clean data first
-    clean_df = validate_and_clean_data(df)
-    
-    if len(clean_df) == 0:
-        return html.Div("No valid data after cleaning")
-    
-    # Select key columns for display
-    display_columns = [
-        'project_name_en', 'area_name_en', 'developer_name', 'property_type_en', 'rooms_en',
-        'price_sqft_cagr', 'price_sqft_percentage_growth', 'market_outperformance',
-        'transaction_count', 'duration_years'
-    ]
-    
-    # Filter for available columns
-    available_columns = [col for col in display_columns if col in clean_df.columns]
-    table_df = clean_df[available_columns].copy()
+    if len(project_df) == 0:
+        return project_df
     
     # Sort by CAGR descending
-    if 'price_sqft_cagr' in table_df.columns:
-        table_df = table_df.sort_values('price_sqft_cagr', ascending=False)
+    project_df = project_df.sort_values('cagr', ascending=False)
     
-    # Limit rows
-    table_df = table_df.head(max_rows)
-    
-    # Round numeric columns
-    numeric_columns = ['price_sqft_cagr', 'price_sqft_percentage_growth', 'market_outperformance', 'duration_years']
-    for col in numeric_columns:
-        if col in table_df.columns:
-            table_df[col] = table_df[col].round(2)
-    
-    # Create column definitions
-    columns = []
-    for col in table_df.columns:
-        column_name = col.replace('_', ' ').replace('en', '').title()
-        column_name = column_name.replace('Sqft', 'sqft').replace('Cagr', 'CAGR')
-        
-        columns.append({
-            "name": column_name,
-            "id": col,
-            "type": "numeric" if col in numeric_columns + ['transaction_count'] else "text"
-        })
-    
-    # Create the data table
-    table = dash_table.DataTable(
-        columns=columns,
-        data=table_df.to_dict('records'),
-        sort_action="native",
-        filter_action="native",
-        page_size=20,
-        style_table={'overflowX': 'auto'},
-        style_header={
-            'backgroundColor': 'rgb(230, 230, 230)',
-            'fontWeight': 'bold',
-            'textAlign': 'center'
-        },
-        style_cell={
-            'textAlign': 'left',
-            'padding': '8px',
-            'whiteSpace': 'normal',
-            'height': 'auto',
-        },
-        style_data_conditional=[
-            {
-                'if': {
-                    'filter_query': '{price_sqft_cagr} > 10',
-                    'column_id': 'price_sqft_cagr'
-                },
-                'backgroundColor': 'rgba(0, 255, 0, 0.2)',
-                'fontWeight': 'bold'
-            },
-            {
-                'if': {
-                    'filter_query': '{price_sqft_cagr} < 0',
-                    'column_id': 'price_sqft_cagr'
-                },
-                'backgroundColor': 'rgba(255, 0, 0, 0.2)'
-            }
-        ]
-    )
-    
-    return table
+    return project_df
 
-def create_empty_figure(message="No data available"):
+# =============================================================================
+# MAIN INTERFACE FUNCTIONS
+# =============================================================================
+
+def get_all_project_metrics(force_refresh=False):
     """
-    Create an empty figure with a message when no data is available
+    Get or calculate all project metrics (cached for performance)
     
     Args:
-        message (str): Message to display
+        force_refresh (bool): Force recalculation even if cached
         
     Returns:
-        go.Figure: Empty plotly figure with message
+        pd.DataFrame: All project metrics
     """
+    global _all_projects_cache
+    
+    if _all_projects_cache is not None and not force_refresh:
+        print("Using cached project metrics")
+        return _all_projects_cache.copy()
+    
+    print("Calculating all project metrics (this may take a moment)...")
+    
+    # Load transaction data
+    txn_df = load_transaction_data()
+    
+    # Calculate metrics for ALL projects
+    all_metrics = calculate_project_metrics(txn_df, 'All')
+    
+    # Add compatibility columns
+    all_metrics = add_compatibility_columns(all_metrics)
+    
+    # Apply quality filters
+    all_metrics = apply_quality_filters(all_metrics, False)
+    
+    # Cache the results
+    _all_projects_cache = all_metrics
+    print(f"Cached metrics for {len(all_metrics)} projects")
+    
+    return all_metrics.copy()
+
+def prepare_project_data(df=None, property_type='All', area='All', developer='All', room_type='All'):
+    """
+    Main interface function for project data preparation with filtering
+    
+    Args:
+        df (pd.DataFrame, optional): Not used - kept for compatibility
+        property_type (str): Property type filter
+        area (str): Area filter  
+        developer (str): Developer filter
+        room_type (str): Room type filter
+        
+    Returns:
+        pd.DataFrame: Enhanced project dataset with CAGR metrics and flags
+    """
+    print(f"Processing projects with filters: Property={property_type}, Area={area}, Developer={developer}, Room={room_type}")
+    
+    # If only developer/area filters (no property/room filters), use cached data
+    if property_type == 'All' and room_type == 'All':
+        # Get pre-calculated metrics
+        all_metrics = get_all_project_metrics()
+        
+        # Apply developer/area filters at project level
+        filtered_metrics = all_metrics.copy()
+        
+        if developer != 'All':
+            filtered_metrics = filtered_metrics[filtered_metrics['developer_name'] == developer]
+            print(f"Filtered to {len(filtered_metrics)} projects by developer: {developer}")
+            
+        if area != 'All':
+            filtered_metrics = filtered_metrics[filtered_metrics['area_name_en'] == area]
+            print(f"Filtered to {len(filtered_metrics)} projects in area: {area}")
+        
+        return filtered_metrics
+    
+    else:
+        # For property/room filters, we need to recalculate
+        print("Property/Room filter detected - recalculating metrics...")
+        
+        # Load transaction data
+        txn_df = load_transaction_data()
+        
+        # Apply deed-level filters
+        filtered_txn_df = apply_deed_filters(txn_df, property_type, area, developer, room_type)
+        
+        if len(filtered_txn_df) == 0:
+            print("No transactions match the selected filters")
+            return pd.DataFrame()
+        
+        # Calculate metrics
+        project_metrics = calculate_project_metrics(filtered_txn_df, room_type)
+        
+        # Add compatibility columns
+        project_metrics = add_compatibility_columns(project_metrics)
+        
+        # Apply quality filters
+        project_metrics = apply_quality_filters(project_metrics, room_type != 'All')
+        
+        return project_metrics
+
+def filter_project_data(df, property_type='All', area='All', developer='All', room_type='All'):
+    """
+    Filter project data - wrapper for prepare_project_data for compatibility
+    
+    Args:
+        df (pd.DataFrame): Project data (ignored - recalculated)
+        property_type (str): Property type filter
+        area (str): Area filter
+        developer (str): Developer filter
+        room_type (str): Room type filter
+        
+    Returns:
+        pd.DataFrame: Filtered project data
+    """
+    return prepare_project_data(df, property_type, area, developer, room_type)
+
+# =============================================================================
+# AGGREGATION FUNCTIONS
+# =============================================================================
+
+def aggregate_to_area_level(project_df):
+    """
+    Create area-level aggregations with both simple and weighted averages
+    
+    Args:
+        project_df (pd.DataFrame): Project-level metrics
+        
+    Returns:
+        pd.DataFrame: Area-level aggregations matching output schema
+    """
+    if len(project_df) == 0:
+        return pd.DataFrame()
+    
+    # Basic aggregations
+    area_agg = project_df.groupby('area_name_en').agg({
+        'cagr': ['count', 'mean'],
+        'transaction_count': 'sum',
+        'is_early_launch': 'sum',
+        'is_thin': 'sum',
+        'needs_review': 'sum',
+        'recent_aed_volume': 'median'
+    }).round(2)
+    
+    # Flatten column names
+    area_agg.columns = ['project_count', 'simple_avg_cagr', 'total_transactions', 
+                        'early_count', 'thin_count', 'review_count', 'median_aed_volume']
+    
+    # Calculate weighted average CAGR
+    def weighted_cagr(group):
+        weights = group['transaction_count']
+        if weights.sum() > 0:
+            return np.average(group['cagr'], weights=weights)
+        return np.nan
+    
+    weighted_avg = project_df.groupby('area_name_en').apply(weighted_cagr).round(2)
+    area_agg['weighted_avg_cagr'] = weighted_avg
+    
+    # Calculate share of early/thin projects
+    area_agg['share_early_thin'] = ((area_agg['early_count'] + area_agg['thin_count']) / 
+                                   area_agg['project_count'] * 100).round(1)
+    
+    # Count excluded projects (those needing review)
+    area_agg['excluded_count'] = area_agg['review_count']
+    
+    # Reset index and select final columns
+    area_agg = area_agg.reset_index()
+    
+    # Match output schema
+    final_columns = [
+        'area_name_en', 'project_count', 'simple_avg_cagr', 'weighted_avg_cagr',
+        'share_early_thin', 'median_aed_volume', 'excluded_count'
+    ]
+    
+    area_agg = area_agg[final_columns].sort_values('weighted_avg_cagr', ascending=False)
+    
+    return area_agg
+
+def aggregate_to_developer_level(project_df):
+    """
+    Create developer-level aggregations with portfolio analysis
+    
+    Args:
+        project_df (pd.DataFrame): Project-level metrics
+        
+    Returns:
+        pd.DataFrame: Developer-level aggregations matching output schema
+    """
+    if len(project_df) == 0:
+        return pd.DataFrame()
+    
+    # Basic aggregations
+    dev_agg = project_df.groupby('developer_name').agg({
+        'cagr': ['count', 'mean', 'std'],
+        'transaction_count': 'sum',
+        'is_early_launch': 'sum',
+        'is_thin': 'sum',
+        'needs_review': 'sum'
+    }).round(2)
+    
+    # Flatten column names
+    dev_agg.columns = ['active_projects', 'portfolio_mean_cagr', 'cagr_std',
+                       'total_transactions', 'early_count', 'thin_count', 'review_count']
+    
+    # Calculate weighted portfolio CAGR
+    def weighted_cagr(group):
+        weights = group['transaction_count']
+        if weights.sum() > 0:
+            return np.average(group['cagr'], weights=weights)
+        return np.nan
+    
+    weighted_avg = project_df.groupby('developer_name').apply(weighted_cagr).round(2)
+    dev_agg['portfolio_weighted_cagr'] = weighted_avg
+    
+    # Calculate stability score (inverse of coefficient of variation)
+    dev_agg['stability_score'] = np.where(
+        dev_agg['cagr_std'] > 0,
+        (100 / (1 + dev_agg['cagr_std'] / abs(dev_agg['portfolio_mean_cagr']))).round(1),
+        100.0
+    )
+    
+    # Calculate share of early/thin projects
+    dev_agg['early_thin_share'] = ((dev_agg['early_count'] + dev_agg['thin_count']) / 
+                                  dev_agg['active_projects'] * 100).round(1)
+    
+    # Count excluded projects
+    dev_agg['excluded_count'] = dev_agg['review_count']
+    
+    # Reset index and select final columns
+    dev_agg = dev_agg.reset_index()
+    
+    # Match output schema
+    final_columns = [
+        'developer_name', 'active_projects', 'portfolio_mean_cagr', 
+        'portfolio_weighted_cagr', 'stability_score', 'early_thin_share', 'excluded_count'
+    ]
+    
+    dev_agg = dev_agg[final_columns].sort_values('portfolio_weighted_cagr', ascending=False)
+    
+    return dev_agg
+
+# =============================================================================
+# VISUALIZATION FUNCTIONS
+# =============================================================================
+
+def create_empty_figure(message="No data available"):
+    """Create empty figure with message"""
     fig = go.Figure()
     fig.add_annotation(
         text=message,
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=0.5,
+        xref="paper", yref="paper",
+        x=0.5, y=0.5,
         showarrow=False,
         font=dict(size=16, color="gray")
     )
@@ -768,122 +752,388 @@ def create_empty_figure(message="No data available"):
     )
     return fig
 
-def calculate_data_quality(df):
-    """
-    Calculate data quality indicator based on transaction counts and duration
-    
-    Args:
-        df (pd.DataFrame): Project dataset
-        
-    Returns:
-        str: Data quality level ('high', 'medium', 'low')
-    """
-    if df is None or len(df) == 0:
-        return 'none'
-    
-    # Calculate percentage of projects with sufficient transactions and duration
-    sufficient_tx = (df['transaction_count'] >= 20).mean() * 100
-    sufficient_duration = (df['duration_years'] >= 1).mean() * 100
-    
-    # Combined quality score
-    quality_score = (sufficient_tx + sufficient_duration) / 2
-    
-    if quality_score >= 70:
-        return 'high'
-    elif quality_score >= 40:
-        return 'medium'
-    else:
-        return 'low'
+# REPLACE these visualization functions in project_analysis.py:
 
-def calculate_coverage_percentage(df):
+def create_individual_project_analysis(df, title="Top 20 Projects by CAGR"):
     """
-    Calculate data coverage percentage based on available metrics
+    Create horizontal bar chart for individual project performance - TOP 20 PROJECTS
     
     Args:
-        df (pd.DataFrame): Project dataset
+        df (pd.DataFrame): Project metrics data
+        title (str): Chart title
         
     Returns:
-        float: Coverage percentage
+        plotly.graph_objects.Figure: Interactive bar chart
     """
-    if df is None or len(df) == 0:
-        return 0.0
+    if len(df) == 0:
+        return create_empty_figure("No projects available for analysis")
     
-    # Key metrics that should be available
-    key_metrics = ['price_sqft_cagr', 'market_outperformance', 'peer_volatility']
+    # Take top 20 projects by CAGR (changed from 25)
+    display_df = df.nlargest(20, 'cagr').copy()
     
-    coverage_scores = []
-    for metric in key_metrics:
-        if metric in df.columns:
-            coverage = df[metric].notna().mean() * 100
-            coverage_scores.append(coverage)
+    # Reverse order for proper display (top performers at top)
+    display_df = display_df.iloc[::-1].copy()
     
-    return np.mean(coverage_scores) if coverage_scores else 0.0
+    # Create project labels
+    display_df['project_label'] = display_df.apply(
+        lambda x: f"{x['project_name_en'][:35]}..." if len(x['project_name_en']) > 35 
+        else x['project_name_en'], axis=1
+    )
+    
+    # Define colors based on flags
+    colors = []
+    for _, row in display_df.iterrows():
+        if row['single_transaction']:
+            colors.append('lightgray')  # Single transaction
+        elif row['needs_review']:
+            colors.append('red')  # Review needed
+        elif row['is_thin']:
+            colors.append('orange')  # Thin data
+        elif row['is_early_launch']:
+            colors.append('lightblue')  # Early launch
+        else:
+            colors.append('darkblue')  # Normal
+    
+    # Create bar chart
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        y=display_df['project_label'],
+        x=display_df['cagr'],
+        orientation='h',
+        marker_color=colors,
+        text=[f"{val:.1f}%" for val in display_df['cagr']],
+        textposition='outside',
+        hovertemplate=(
+            "<b>%{y}</b><br>" +
+            "CAGR: %{x:.1f}%<br>" +
+            "Developer: %{customdata[0]}<br>" +
+            "Area: %{customdata[1]}<br>" +
+            "Launch Price: AED %{customdata[2]:,.0f}/ft²<br>" +
+            "Recent Price: AED %{customdata[3]:,.0f}/ft²<br>" +
+            "Transaction Count: %{customdata[4]:,}<br>" +
+            "Project Age: %{customdata[5]:.0f} days<br>" +
+            "<extra></extra>"
+        ),
+        customdata=display_df[['developer_name', 'area_name_en', 'launch_price_sqft', 
+                              'recent_price_sqft', 'transaction_count', 'age_days']].values
+    ))
+    
+    # Add zero line
+    fig.add_vline(x=0, line_dash="dash", line_color="gray")
+    
+    # Update layout
+    fig.update_layout(
+        title=title,
+        xaxis_title="Annual Price Appreciation (CAGR %)",
+        yaxis_title="Project",
+        height=max(700, len(display_df) * 30 + 150),  # Increased height for 20 projects
+        showlegend=False,
+        margin=dict(l=350, r=150, t=80, b=80),  # Increased left margin
+        clickmode='event+select'
+    )
+    
+    return fig
+
+def create_area_performance_comparison(df, title="Top 20 Areas by Volume-Weighted CAGR"):
+    """
+    Create horizontal OVERLAY bar chart for area performance comparison - TOP 20 AREAS
+    Simple average bar behind, volume-weighted bar in front
+    """
+    if len(df) == 0:
+        return create_empty_figure("No data available for area comparison")
+    
+    # Get area aggregations
+    area_stats = aggregate_to_area_level(df)
+    
+    # Filter areas with at least 3 projects
+    area_stats = area_stats[area_stats['project_count'] >= 1].copy()
+    
+    if len(area_stats) == 0:
+        return create_empty_figure("Insufficient data for area comparison (need ≥3 projects per area)")
+    
+    # Sort and take top 20 (changed from 15)
+    top_areas = area_stats.nlargest(20, 'weighted_avg_cagr').iloc[::-1].copy()
+    
+    # Create labels
+    top_areas['area_label'] = top_areas.apply(
+        lambda x: f"{x['area_name_en']} ({x['project_count']} projects)", axis=1
+    )
+    
+    # Create figure with OVERLAY bars (not grouped)
+    fig = go.Figure()
+    
+    # Simple average bars (BEHIND - lighter color)
+    fig.add_trace(go.Bar(
+        y=top_areas['area_label'],
+        x=top_areas['simple_avg_cagr'],
+        name='Simple Average',
+        orientation='h',
+        marker_color='lightblue',
+        marker_line=dict(color='rgba(50,50,50,0.8)', width=0.5),
+        text=[f"{val:.1f}%" for val in top_areas['simple_avg_cagr']],
+        textposition='outside',
+        opacity=0.7  # Make it more transparent since it's behind
+    ))
+    
+    # Volume-weighted bars (FRONT - darker color) 
+    fig.add_trace(go.Bar(
+        y=top_areas['area_label'],
+        x=top_areas['weighted_avg_cagr'],
+        name='Volume-Weighted',
+        orientation='h',
+        marker_color='darkblue',
+        marker_line=dict(color='rgba(20,20,20,0.8)', width=1),
+        text=[f"{val:.1f}%" for val in top_areas['weighted_avg_cagr']],
+        textposition='outside',
+        opacity=0.9  # More opaque since it's in front
+    ))
+    
+    # Add zero line
+    fig.add_vline(x=0, line_dash="dash", line_color="gray")
+    
+    # Update layout for OVERLAY (not grouped)
+    fig.update_layout(
+        title=title,
+        xaxis_title="Average CAGR (%)",
+        yaxis_title="Area",
+        height=max(700, len(top_areas) * 30 + 150),  # Increased height for 20 areas
+        barmode='group',  # CHANGED from 'group' to 'overlay'
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        margin=dict(l=350, r=120, t=100, b=80)  # Increased left margin
+    )
+    
+    return fig
+
+def create_developer_track_record_analysis(df, title="Top 20 Developers by Volume-Weighted CAGR"):
+    """
+    Create horizontal OVERLAY bar chart for developer track record - TOP 20 DEVELOPERS
+    """
+    if len(df) == 0:
+        return create_empty_figure("No data available for developer comparison")
+    
+    # Get developer aggregations
+    dev_stats = aggregate_to_developer_level(df)
+    
+    # Filter developers with at least 2 projects
+    dev_stats = dev_stats[dev_stats['active_projects'] >= 1].copy()
+    
+    if len(dev_stats) == 0:
+        return create_empty_figure("Insufficient data for developer comparison (need ≥2 projects per developer)")
+    
+    # Sort and take top 20 (changed from 15)
+    top_devs = dev_stats.nlargest(20, 'portfolio_weighted_cagr').iloc[::-1].copy()
+    
+    # Create labels
+    top_devs['dev_label'] = top_devs.apply(
+        lambda x: f"{x['developer_name'][:30]}..." if len(x['developer_name']) > 30 
+        else x['developer_name'], axis=1
+    )
+    top_devs['dev_label'] = top_devs['dev_label'] + " (" + top_devs['active_projects'].astype(str) + ")"
+    
+    # Create figure with overlay bars
+    fig = go.Figure()
+    
+    # Simple average bars (BEHIND - lighter color)
+    fig.add_trace(go.Bar(
+        y=top_devs['dev_label'],
+        x=top_devs['portfolio_mean_cagr'],
+        name='Simple Average',
+        orientation='h',
+        marker_color='lightgreen',
+        marker_line=dict(color='rgba(50,50,50,0.8)', width=0.5),
+        text=[f"{val:.1f}%" for val in top_devs['portfolio_mean_cagr']],
+        textposition='outside',
+        opacity=0.7  # More transparent since it's behind
+    ))
+    
+    # Volume-weighted bars (FRONT - darker color)
+    fig.add_trace(go.Bar(
+        y=top_devs['dev_label'],
+        x=top_devs['portfolio_weighted_cagr'],
+        name='Volume-Weighted',
+        orientation='h',
+        marker_color='darkgreen',
+        marker_line=dict(color='rgba(20,20,20,0.8)', width=1),
+        text=[f"{val:.1f}%" for val in top_devs['portfolio_weighted_cagr']],
+        textposition='outside',
+        opacity=0.9  # More opaque since it's in front
+    ))
+    
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+    ),
+    # Add zero line
+    fig.add_vline(x=0, line_dash="dash", line_color="gray")
+    
+    # Update layout for overlay
+    fig.update_layout(
+        title=title,
+        xaxis_title="Portfolio-Weighted CAGR (%)",
+        yaxis_title="Developer",
+        height=max(700, len(top_devs) * 30 + 150),  # Increased height for 20 developers
+        barmode='group',  # OVERLAY bars
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        margin=dict(l=400, r=120, t=100, b=80)  # Increased left margin for longer labels
+    )
+    
+    return fig
+
+# =============================================================================
+# DASHBOARD COMPATIBILITY FUNCTIONS
+# =============================================================================
 
 def prepare_insights_metadata(df, filters=None, peer_group_info=None):
     """
     Prepare metadata dictionary for the insights system
     
     Args:
-        df (pd.DataFrame): Filtered project dataset
+        df (pd.DataFrame): Project metrics data
         filters (dict): Applied filters
-        peer_group_info (dict): Information about peer groups
+        peer_group_info (dict): Peer group information
         
     Returns:
-        dict: Metadata for insights system
+        dict: Metadata for insights generation
     """
-    if df is None or len(df) == 0:
+    if len(df) == 0:
         return {
             'data_quality': 'none',
             'coverage_pct': 0.0,
-            'estimation_method': None,
+            'estimation_method': 'transaction_based',
             'total_projects': 0
         }
     
+    # Calculate data quality based on flags
+    total_projects = len(df)
+    good_quality = len(df[~(df['is_thin'] | df['needs_review'])])
+    quality_pct = (good_quality / total_projects * 100) if total_projects > 0 else 0
+    
+    if quality_pct >= 70:
+        data_quality = 'high'
+    elif quality_pct >= 40:
+        data_quality = 'medium'
+    else:
+        data_quality = 'low'
+    
     metadata = {
-        'data_quality': calculate_data_quality(df),
-        'coverage_pct': calculate_coverage_percentage(df),
-        'estimation_method': None,  # We use actual transaction data, no estimation
-        'total_projects': len(df),
-        'total_transactions': df['transaction_count'].sum() if 'transaction_count' in df.columns else 0,
-        'median_duration': df['duration_years'].median() if 'duration_years' in df.columns else 0
+        'data_quality': data_quality,
+        'coverage_pct': quality_pct,
+        'estimation_method': 'adaptive_cagr',
+        'total_projects': total_projects,
+        'total_transactions': df['transaction_count'].sum(),
+        'median_age_days': df['age_days'].median(),
+        'early_launch_count': df['is_early_launch'].sum(),
+        'thin_data_count': df['is_thin'].sum(),
+        'review_count': df['needs_review'].sum()
     }
     
-    # Add peer group information if available
     if peer_group_info:
         metadata.update(peer_group_info)
     
     return metadata
 
-def get_peer_group_info(df, property_type=None, room_type=None):
+def get_peer_group_info(df, property_type='All', area='All'):
     """
-    Get information about peer groups for a specific property+room combination
+    Get peer group information for context
     
     Args:
-        df (pd.DataFrame): Full project dataset
+        df (pd.DataFrame): Project metrics data
         property_type (str): Property type filter
-        room_type (str): Room type filter
+        area (str): Area filter
         
     Returns:
         dict: Peer group information
     """
-    if df is None or len(df) == 0:
-        return {'peer_group_size': 0}
+    if len(df) == 0:
+        return {}
     
-    # If specific filters provided, get peer group size
-    if property_type and property_type != 'All' and room_type and room_type != 'All':
-        peer_group = df[
-            (df['property_type_en'] == property_type) & 
-            (df['rooms_en'] == room_type)
-        ]
-        return {
-            'peer_group_size': len(peer_group),
-            'peer_property_type': property_type,
-            'peer_room_type': room_type
-        }
-    
-    # Otherwise, get average peer group size across all combinations
-    peer_groups = df.groupby(['property_type_en', 'rooms_en']).size()
-    return {
-        'avg_peer_group_size': peer_groups.mean(),
-        'total_property_combinations': len(peer_groups)
+    peer_info = {
+        'peer_group_size': len(df),
+        'peer_median_cagr': df['cagr'].median(),
+        'peer_avg_transactions': df['transaction_count'].mean(),
     }
+    
+    if property_type != 'All':
+        peer_info['property_type_focus'] = property_type
+    
+    if area != 'All':
+        peer_info['area_focus'] = area
+    
+    return peer_info
+
+# =============================================================================
+# ROOM TYPE ANALYSIS (FOR DRILL-DOWN)
+# =============================================================================
+
+def get_project_room_breakdown(project_id, property_type='All', area='All', developer='All'):
+    """
+    Get room type breakdown for a specific project (for drill-down functionality)
+    
+    Args:
+        project_id (int): Project number
+        property_type (str): Property type filter
+        area (str): Area filter
+        developer (str): Developer filter
+        
+    Returns:
+        pd.DataFrame: Room type breakdown for the project
+    """
+    try:
+        # Load transaction data
+        txn_df = load_transaction_data()
+        
+        # Filter to specific project
+        project_txns = txn_df[txn_df['project_number_int'] == project_id].copy()
+        
+        # Apply other filters (but NOT room type)
+        if property_type != 'All':
+            project_txns = project_txns[project_txns['property_type_en'] == property_type]
+        if area != 'All':
+            project_txns = project_txns[project_txns['area_name_en'] == area]
+        if developer != 'All':
+            project_txns = project_txns[project_txns['developer_name'] == developer]
+        
+        if len(project_txns) == 0 or 'rooms_en' not in project_txns.columns:
+            return pd.DataFrame()
+        
+        # Calculate metrics for each room type
+        room_results = []
+        
+        for room_type in project_txns['rooms_en'].unique():
+            room_txns = project_txns[project_txns['rooms_en'] == room_type].copy()
+            
+            if len(room_txns) < 2:
+                continue
+            
+            # Calculate basic metrics using our adaptive system
+            room_metrics = calculate_project_metrics(room_txns, room_type)
+            
+            if len(room_metrics) > 0:
+                room_record = room_metrics.iloc[0].copy()
+                room_record['room_type'] = room_type
+                room_results.append(room_record)
+        
+        if room_results:
+            return pd.DataFrame(room_results).sort_values('cagr', ascending=False)
+        else:
+            return pd.DataFrame()
+            
+    except Exception as e:
+        print(f"Error in room breakdown analysis: {e}")
+        return pd.DataFrame()

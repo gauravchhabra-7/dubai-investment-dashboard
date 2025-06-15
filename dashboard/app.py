@@ -37,7 +37,7 @@ def load_processed_data(fallback_to_raw=True):
         fallback_to_raw (bool): Whether to try loading raw data if processed isn't available
         
     Returns:
-        tuple: (df, geo_df, launch_completion_df, micro_segment_df, comparative_df)
+        tuple: (df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df)
     """
     # Try to load processed data from parent directory if we're in dashboard/
     output_dir = OUTPUT_DIR
@@ -52,6 +52,7 @@ def load_processed_data(fallback_to_raw=True):
         launch_completion_df = None
         micro_segment_df = None
         comparative_df = None
+        time_series_df = None
         
         geo_path = os.path.join(output_dir, 'geographic_analysis.csv')
         if os.path.exists(geo_path):
@@ -61,19 +62,34 @@ def load_processed_data(fallback_to_raw=True):
             except Exception as e:
                 print(f"Error loading geographic data: {e}")
         
-        launch_path = os.path.join(output_dir, 'launch_completion.csv')
+        # FIXED: Load project analysis data with correct column names
+        launch_path = os.path.join(output_dir, 'project_txn_analysis.csv')
         if os.path.exists(launch_path):
             try:
                 launch_completion_df = pd.read_csv(launch_path)
-                # Convert date columns to datetime
-                date_cols = ['project_start_date', 'completion_date']
+                
+                # Convert NEW project analysis date columns to datetime
+                # These are the actual column names from our new project_analysis.py
+                date_cols = ['first_window_start', 'first_window_end',
+                            'recent_window_start', 'recent_window_end']
+                
                 for col in date_cols:
                     if col in launch_completion_df.columns:
-                        launch_completion_df[col] = pd.to_datetime(launch_completion_df[col])
+                        launch_completion_df[col] = pd.to_datetime(launch_completion_df[col], errors='coerce')
                         
-                print(f"Loaded launch completion data ({len(launch_completion_df)} projects)")
+                print(f"Loaded project analysis data ({len(launch_completion_df)} projects)")
+                
+                # Display summary of loaded data for debugging
+                if len(launch_completion_df) > 0:
+                    print(f"   - Projects with valid CAGR: {launch_completion_df['cagr'].notna().sum()}")
+                    print(f"   - Early stage projects: {launch_completion_df['is_early_launch'].sum()}")
+                    print(f"   - Projects with thin data: {launch_completion_df['is_thin'].sum()}")
+                    print(f"   - Projects needing review: {launch_completion_df['needs_review'].sum()}")
+                    
             except Exception as e:
-                print(f"Error loading launch completion data: {e}")
+                print(f"Error loading project analysis data: {e}")
+                print(f"Please ensure main.py has been run to generate project analysis files")
+                launch_completion_df = None
                 
         # Try to load micro segment data if available
         micro_segment_path = os.path.join(output_dir, 'micro_segment_analysis.csv')
@@ -86,7 +102,6 @@ def load_processed_data(fallback_to_raw=True):
 
         # Load time series data if available
         time_series_path = os.path.join(output_dir, 'market_summary.csv')
-        time_series_df = None
         if os.path.exists(time_series_path):
             try:
                 time_series_df = pd.read_csv(time_series_path)
@@ -119,14 +134,15 @@ def load_processed_data(fallback_to_raw=True):
             launch_completion_df = None
             micro_segment_df = None
             comparative_df = None
+            time_series_df = None
             
             return df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df
         else:
             print(f"Raw data not found at {raw_path}")
-            return None, None, None, None, None
+            return None, None, None, None, None, None
     else:
         print(f"Processed data not found at {processed_path}")
-        return None, None, None, None, None
+        return None, None, None, None, None, None
 
 # Load dataset info if available
 dataset_info = {}
@@ -153,6 +169,21 @@ if df is None:
         'reg_type_en': ['Existing Properties', 'Off-Plan Properties']
     })
     print("Using dummy data due to loading error")
+
+# Enhanced debugging for project analysis data
+if launch_completion_df is not None:
+    print(f"\n=== PROJECT ANALYSIS DATA LOADED ===")
+    print(f"Shape: {launch_completion_df.shape}")
+    if len(launch_completion_df) > 0:
+        print(f"Columns: {list(launch_completion_df.columns)}")
+        print(f"Sample CAGR values: {launch_completion_df['cagr'].head().tolist()}")
+        print(f"CAGR range: {launch_completion_df['cagr'].min():.1f}% to {launch_completion_df['cagr'].max():.1f}%")
+    print("=====================================\n")
+else:
+    print(f"\n❌ PROJECT ANALYSIS DATA NOT LOADED")
+    print("   This will cause the Project Analysis tab to be blank")
+    print("   Please run 'python main.py' to generate the required files")
+    print("=====================================\n")
 
 # Check for asset directories and create if needed
 asset_dir = os.path.join(current_dir, 'assets') if current_dir.endswith('dashboard') else 'assets'
@@ -204,6 +235,17 @@ if __name__ == '__main__':
     print(f"Years: {'-'.join(map(str, dataset_info.get('year_range', ['Unknown', 'Unknown'])))}") 
     print(f"Property Types: {', '.join(dataset_info.get('property_types', ['Unknown']))}")
     print(f"Registration Types: {', '.join(dataset_info.get('registration_types', ['Unknown']))}")
+    
+    # Enhanced startup diagnostics
+    print(f"\n=== DATA STATUS ===")
+    print(f"Main DataFrame: {'✅ Loaded' if df is not None else '❌ Missing'}")
+    print(f"Geographic Data: {'✅ Loaded' if geo_df is not None else '❌ Missing'}")
+    print(f"Project Analysis: {'✅ Loaded' if launch_completion_df is not None else '❌ Missing'}")
+    print(f"Micro Segments: {'✅ Loaded' if micro_segment_df is not None else '❌ Missing'}")
+    print(f"Comparative Data: {'✅ Loaded' if comparative_df is not None else '❌ Missing'}")
+    print(f"Time Series: {'✅ Loaded' if time_series_df is not None else '❌ Missing'}")
+    print("===================")
+    
     print("\nStarting Dashboard Server...")
     
     app.run(debug=debug, host='0.0.0.0', port=port)

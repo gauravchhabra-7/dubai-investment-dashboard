@@ -15,22 +15,182 @@ def get_time_horizon_display(time_horizon):
     else:
         return "Recent Growth"
 
+def find_best_current_year(df):
+    """
+    Find the best current year by comparing the latest two year columns
+    
+    Args:
+        df (pd.DataFrame): The dataframe containing year columns
+        
+    Returns:
+        int: The best year to use as "current" based on data quality
+    """
+    # Find all year columns
+    year_columns = []
+    for col in df.columns:
+        try:
+            year = int(col)
+            if 2000 <= year <= 2030:
+                year_columns.append(year)
+        except (ValueError, TypeError):
+            continue
+    
+    if len(year_columns) < 2:
+        print("Warning: Less than 2 year columns found")
+        return max(year_columns) if year_columns else 2024
+    
+    # Sort and get latest two years
+    year_columns.sort()
+    latest_two = year_columns[-2:]
+    
+    # Calculate coverage for both years
+    coverage = {}
+    for year in latest_two:
+        year_col = str(year)
+        if year_col in df.columns:
+            non_null_count = df[year_col].notna().sum()
+            valid_count = (df[year_col].notna() & (df[year_col] > 0)).sum()
+            coverage[year] = valid_count / len(df) * 100
+        else:
+            coverage[year] = 0
+    
+    # Select the year with better coverage
+    best_year = latest_two[0] if coverage[latest_two[0]] >= coverage[latest_two[1]] else latest_two[1]
+    
+    print(f"Year comparison: {latest_two[0]}({coverage[latest_two[0]]:.1f}%) vs {latest_two[1]}({coverage[latest_two[1]]:.1f}%)")
+    print(f"Selected best current year: {best_year} ({coverage[best_year]:.1f}% coverage)")
+    
+    return best_year
+
+def calculate_growth_from_years(df, start_year, end_year):
+    """
+    Calculate growth rate from year price columns
+    
+    Args:
+        df (pd.DataFrame): The dataframe containing year columns
+        start_year (int): Starting year
+        end_year (int): Ending year
+        
+    Returns:
+        pd.Series: Calculated growth rates
+    """
+    start_col = str(start_year)
+    end_col = str(end_year)
+    
+    # Check if columns exist
+    if start_col not in df.columns or end_col not in df.columns:
+        print(f"Warning: Year columns {start_col} or {end_col} not found")
+        return pd.Series(np.nan, index=df.index)
+    
+    # Create a series with NaN values
+    growth = pd.Series(np.nan, index=df.index)
+    
+    # Only calculate for rows where both years have valid data
+    mask = (df[start_col].notna() & df[end_col].notna() & 
+            (df[start_col] > 0) & (df[end_col] > 0))
+    
+    if mask.sum() > 0:
+        # Calculate simple growth for 1 year, CAGR for multiple years
+        if end_year - start_year == 1:
+            growth.loc[mask] = ((df.loc[mask, end_col] / df.loc[mask, start_col]) - 1) * 100
+        else:
+            years = end_year - start_year
+            growth.loc[mask] = ((df.loc[mask, end_col] / df.loc[mask, start_col]) ** (1/years) - 1) * 100
+    
+    valid_count = growth.notna().sum()
+    coverage_pct = (valid_count / len(df)) * 100
+    print(f"Calculated {start_year}→{end_year} growth: {valid_count} valid rows ({coverage_pct:.1f}% coverage)")
+    
+    return growth
+
+def map_conceptual_time_horizon(df, requested_horizon):
+    """
+    Map conceptual time horizon labels to actual calculations using year columns
+    
+    Args:
+        df (pd.DataFrame): The dataframe containing year columns
+        requested_horizon (str): The conceptual time horizon label
+        
+    Returns:
+        tuple: (calculated_series, metadata_dict)
+    """
+    # Find the best current year
+    current_year = find_best_current_year(df)
+    
+    # Map conceptual labels to actual time periods
+    time_horizon_map = {
+        'short_term_growth': {'years': 1, 'name': 'Short-term (1 year)'},
+        'medium_term_growth': {'years': 3, 'name': 'Medium-term (3 years)'},
+        'long_term_cagr': {'years': 5, 'name': 'Long-term (5 years)'}
+    }
+    
+    if requested_horizon not in time_horizon_map:
+        return None, None
+    
+    horizon_info = time_horizon_map[requested_horizon]
+    start_year = current_year - horizon_info['years'] + 1
+    end_year = current_year
+    
+    print(f"Mapping {requested_horizon} to {start_year}→{end_year} ({horizon_info['name']})")
+    
+    # Calculate the growth
+    calculated_series = calculate_growth_from_years(df, start_year, end_year)
+    
+    # Create metadata
+    valid_count = calculated_series.notna().sum()
+    coverage_pct = (valid_count / len(df)) * 100
+    
+    metadata = {
+        'growth_column': f'calculated_{start_year}_to_{end_year}',
+        'coverage_pct': coverage_pct,
+        'data_quality': 'high' if coverage_pct >= 50 else 'medium' if coverage_pct >= 25 else 'low',
+        'estimation_method': 'year_columns',
+        'start_year': start_year,
+        'end_year': end_year,
+        'current_year': current_year,
+        'calculation_type': horizon_info['name']
+    }
+    
+    return calculated_series, metadata
+
 def select_best_growth_column(df, requested_horizon=None, min_coverage_pct=5):
     """
     Intelligently select the best growth column based on data coverage
+    Enhanced with automatic year-based calculation for conceptual time horizons
     
     Args:
         df (pd.DataFrame): The dataframe containing the data
         requested_horizon (str, optional): Specifically requested time horizon
-        min_coverage_pct (float): Minimum percentage of non-null values required (default: 15%)
+        min_coverage_pct (float): Minimum percentage of non-null values required (default: 5%)
         
     Returns:
         tuple: (selected_column, coverage_pct, data_quality)
-               where data_quality is "high", "medium", or "low"
+               where data_quality is "high", "medium", "low", or "none"
     """
     print(f"Selecting best growth column (requested: {requested_horizon})")
     
-    # 1. Check direct growth columns
+    # FIRST: Check if requested horizon is a conceptual label that we can calculate
+    conceptual_horizons = ['short_term_growth', 'medium_term_growth', 'long_term_cagr']
+    
+    if requested_horizon in conceptual_horizons:
+        print(f"Requested horizon '{requested_horizon}' is a conceptual label - using year-based calculation")
+        
+        try:
+            calculated_series, metadata = map_conceptual_time_horizon(df, requested_horizon)
+            
+            if calculated_series is not None and metadata is not None:
+                # Add the calculated series to the dataframe temporarily
+                temp_column_name = f"temp_{requested_horizon}"
+                df[temp_column_name] = calculated_series
+                
+                print(f"Successfully calculated {requested_horizon}: {metadata['coverage_pct']:.1f}% coverage")
+                return temp_column_name, metadata['coverage_pct'], metadata['data_quality']
+            else:
+                print(f"Failed to calculate {requested_horizon}, falling back to existing columns")
+        except Exception as e:
+            print(f"Error calculating {requested_horizon}: {e}, falling back to existing columns")
+    
+    # SECOND: Use existing logic for pre-calculated growth columns
     growth_columns = [col for col in df.columns if isinstance(col, str) and col.startswith('growth_')]
     
     # Include other known growth metrics
@@ -54,15 +214,10 @@ def select_best_growth_column(df, requested_horizon=None, min_coverage_pct=5):
             column_coverage[col] = coverage_pct
             print(f"  - {col}: {coverage_pct:.1f}% coverage ({non_null_count}/{len(df)} rows)")
     
-    # Add after column_coverage dictionary is created
-    for col, coverage in column_coverage.items():
-        print(f"DEBUG TIME FILTER: Column {col} has {coverage:.1f}% coverage")
-    print(f"DEBUG TIME FILTER: Requested horizon: {requested_horizon}, min coverage: {min_coverage_pct}%")
-    
     # Sort by coverage (highest first)
     sorted_columns = sorted(column_coverage.items(), key=lambda x: x[1], reverse=True)
     
-    # 2. Check if requested horizon has adequate coverage
+    # Check if requested horizon has adequate coverage
     if requested_horizon and requested_horizon in column_coverage:
         coverage = column_coverage[requested_horizon]
         if coverage >= min_coverage_pct:
@@ -72,18 +227,14 @@ def select_best_growth_column(df, requested_horizon=None, min_coverage_pct=5):
         else:
             print(f"Requested horizon {requested_horizon} has insufficient coverage ({coverage:.1f}%)")
 
-    # Add right after selecting the column
-    print(f"DEBUG TIME FILTER: Selected column: {col}, with coverage: {coverage_pct}%")
-    print(f"DEBUG TIME FILTER: Was requested column used? {col == requested_horizon}")
-    
-    # 3. Find the best growth column with adequate coverage
+    # Find the best growth column with adequate coverage
     for col, coverage in sorted_columns:
         if coverage >= min_coverage_pct:
             data_quality = "high" if coverage >= 50 else "medium" if coverage >= 25 else "low"
             print(f"Selected {col} with {coverage:.1f}% coverage (quality: {data_quality})")
             return col, coverage, data_quality
     
-    # 4. Check if we can calculate growth from year columns
+    # Check if we can calculate growth from year columns as fallback
     years = sorted([col for col in df.columns if isinstance(col, (int, float)) and 2000 <= col <= 2025])
     if len(years) >= 2:
         latest_year = years[-1]
@@ -102,14 +253,14 @@ def select_best_growth_column(df, requested_horizon=None, min_coverage_pct=5):
             # Return a special identifier to indicate we need to calculate growth
             return f"calc_growth_{prev_year}_to_{latest_year}", combined_coverage, data_quality
     
-    # 5. As a last resort, return the column with highest coverage, even if below threshold
+    # As a last resort, return the column with highest coverage, even if below threshold
     if sorted_columns:
         best_col, best_coverage = sorted_columns[0]
         data_quality = "low"
         print(f"Using best available column {best_col} with limited coverage {best_coverage:.1f}% (quality: {data_quality})")
         return best_col, best_coverage, data_quality
     
-    # 6. Truly no growth data available
+    # Truly no growth data available
     print("No usable growth data found")
     return None, 0, "none"
 
@@ -179,7 +330,7 @@ def estimate_growth_from_price_level(df, market_median=None):
 def perform_microsegment_analysis(df, filters=None, growth_column=None, min_coverage_pct=15):
     """
     Perform microsegment analysis on the dataframe with optional filters
-    Enhanced to better handle sparse data
+    Enhanced to better handle sparse data and use new time horizon mapping
     
     Args:
         df (pd.DataFrame): The dataframe containing the data
@@ -221,10 +372,7 @@ def perform_microsegment_analysis(df, filters=None, growth_column=None, min_cove
         ])
         return empty_df, metadata
     
-    # Get years for price data
-    years = sorted([col for col in filtered_df.columns if isinstance(col, (int, float)) and 2000 <= col <= 2025])
-    
-    # Select best growth column based on data coverage
+    # Select best growth column based on data coverage (now with enhanced time horizon support)
     selected_growth, coverage_pct, data_quality = select_best_growth_column(
         filtered_df, 
         requested_horizon=growth_column,
@@ -276,6 +424,11 @@ def perform_microsegment_analysis(df, filters=None, growth_column=None, min_cove
         selected_growth = column_name
         metadata['estimation_method'] = 'year_columns'
     
+    # Special case: temporary calculated column from conceptual time horizon
+    elif isinstance(selected_growth, str) and selected_growth.startswith('temp_'):
+        print(f"Using temporary calculated column: {selected_growth}")
+        metadata['estimation_method'] = 'conceptual_mapping'
+    
     # Group by microsegments and calculate metrics
     try:
         microsegments = filtered_df.groupby([
@@ -306,6 +459,11 @@ def perform_microsegment_analysis(df, filters=None, growth_column=None, min_cove
         
         # Sort by investment score
         microsegments.sort_values('investment_score', ascending=False, inplace=True)
+        
+        # Clean up temporary columns from the original dataframe
+        if isinstance(selected_growth, str) and selected_growth.startswith('temp_'):
+            if selected_growth in df.columns:
+                df.drop(columns=[selected_growth], inplace=True)
         
         return microsegments, metadata
     except Exception as e:
@@ -498,43 +656,23 @@ def create_investment_heatmap(df, time_horizon="short_term_growth"):
                 title=f"Investment Analysis - Price vs Growth<br><sub>Based on {get_time_horizon_display(time_horizon)}</sub>"
             )
     
-    # Add data quality annotation
-    # data_quality_colors = {
-    #     "high": "green",
-    #     "medium": "orange",
-    #     "low": "red",
-    #     "none": "red"
-    # }
-    
-    # # Add a data quality indicator in the corner
-    # fig.add_annotation(
-    #     x=1,
-    #     y=0,
-    #     xref="paper",
-    #     yref="paper",
-    #     text=f"Data Quality: {data_quality.upper()} ({coverage_pct:.1f}% coverage)",
-    #     showarrow=False,
-    #     font=dict(
-    #         size=12,
-    #         color="white"
-    #     ),
-    #     align="right",
-    #     bgcolor=data_quality_colors.get(data_quality, "gray"),
-    #     bordercolor="black",
-    #     borderwidth=1,
-    #     borderpad=4,
-    #     opacity=0.8
-    # )
-    
     # If data is estimated, add note
     if metadata['estimation_method'] is not None:
-        method_note = "price levels" if metadata['estimation_method'] == 'price_level' else "yearly prices"
+        if metadata['estimation_method'] == 'price_level':
+            method_note = "price levels"
+        elif metadata['estimation_method'] == 'year_columns':
+            method_note = "yearly prices"
+        elif metadata['estimation_method'] == 'conceptual_mapping':
+            method_note = f"calculated {metadata.get('calculation_type', 'time horizon')}"
+        else:
+            method_note = "estimated data"
+            
         fig.add_annotation(
             x=0,
             y=0,
             xref="paper",
             yref="paper",
-            text=f"Note: Growth estimated from {method_note}",
+            text=f"Note: Growth calculated from {method_note}",
             showarrow=False,
             font=dict(
                 size=12,
@@ -792,13 +930,21 @@ def create_opportunity_scatter(df, time_horizon="short_term_growth", max_points=
     
     # If data is estimated, add note
     if metadata['estimation_method'] is not None:
-        method_note = "price levels" if metadata['estimation_method'] == 'price_level' else "yearly prices"
+        if metadata['estimation_method'] == 'price_level':
+            method_note = "price levels"
+        elif metadata['estimation_method'] == 'year_columns':
+            method_note = "yearly prices"
+        elif metadata['estimation_method'] == 'conceptual_mapping':
+            method_note = f"calculated {metadata.get('calculation_type', 'time horizon')}"
+        else:
+            method_note = "estimated data"
+            
         fig.add_annotation(
             x=0,
             y=0,
             xref="paper",
             yref="paper",
-            text=f"Note: Growth estimated from {method_note}",
+            text=f"Note: Growth calculated from {method_note}",
             showarrow=False,
             font=dict(
                 size=12,
@@ -1007,22 +1153,21 @@ def create_microsegment_table(microsegment_df, metadata=None):
         style_data_conditional=style_conditions
     )
     
-    # Data quality indicator colors
-    quality_colors = {
-        'high': 'green',
-        'medium': 'orange',
-        'low': 'red',
-        'none': 'red',
-        'unknown': 'gray'
-    }
-    
     # Note about data estimation if applicable
     estimation_note = None
     if estimation_method is not None:
-        method_text = "price levels" if estimation_method == 'price_level' else "yearly prices"
+        if estimation_method == 'price_level':
+            method_text = "price levels"
+        elif estimation_method == 'year_columns':
+            method_text = "yearly prices"
+        elif estimation_method == 'conceptual_mapping':
+            method_text = f"calculated {metadata.get('calculation_type', 'time horizon')}"
+        else:
+            method_text = "estimated data"
+            
         estimation_note = html.Div([
             html.Span(
-                f"Note: Growth values are estimated from {method_text} due to limited historical data",
+                f"Note: Growth values are calculated from {method_text}",
                 style={
                     'backgroundColor': 'rgba(255, 255, 200, 0.8)',
                     'color': 'black',

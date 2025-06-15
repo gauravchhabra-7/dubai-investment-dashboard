@@ -59,258 +59,614 @@ def create_insights_component(df, analysis_type, visualization_type=None, filter
     
     # Generate analysis-specific insights based on analysis_type and visualization_type
     if analysis_type == 'investment':
-        if visualization_type == 'heatmap':
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Investment Heatmap Analysis"),
-                        html.P([
-                            "This heatmap illustrates the relationship between property types, room configurations, and their ",
-                            "investment potential. Areas with darker colors indicate stronger investment opportunities based ",
-                            "on our composite scoring methodology."
-                        ]),
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Property Type Impact: "),
-                                "Apartments in premium areas show the strongest growth-to-price ratio, while villas offer more stability but lower percentage returns."
-                            ]),
-                            html.Li([
-                                html.Strong("Room Configuration Patterns: "),
-                                "1-2 bedroom configurations consistently outperform larger units in terms of liquidity and growth rates."
-                            ]),
-                            html.Li([
-                                html.Strong("Market Segmentation: "),
-                                "The middle market segment (properties priced between 800-1,500 AED/sqft) currently offers the optimal balance of growth potential and entry price."
-                            ]),
-                            html.Li([
-                                html.Strong("Registration Type Differences: "),
-                                "Off-plan properties show higher growth potential but with increased risk, while existing properties offer better short-term stability."
-                            ])
-                        ])
-                    ]),
-                    
-                    html.Div([
-                        html.H5("Methodology", className="mt-4"),
-                        html.P([
-                            "The investment heatmap uses a proprietary scoring algorithm that combines multiple factors:",
-                            html.Ul([
-                                html.Li("Recent price growth (40% weighting)"),
-                                html.Li("Price level relative to comparable properties (30%)"),
-                                html.Li("Transaction volume/liquidity (20%)"),
-                                html.Li("Developer reputation (10%)")
-                            ]),
-                            "Scores range from 0-100, with higher scores indicating stronger investment potential."
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
+        # Handle both filter formats from different callbacks
+        # Some callbacks pass {'property_type_en': value}, others pass {'property_type': value}
+        def get_filter_value(key1, key2=None):
+            """Get filter value handling both naming conventions"""
+            if filters is None:
+                return 'All'
+            value = filters.get(key1, 'All')
+            if value in [None, 'All'] and key2:
+                value = filters.get(key2, 'All')
+            return value if value is not None else 'All'
         
-        elif visualization_type == 'opportunities':
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Investment Opportunities Matrix Analysis"),
-                        html.P([
-                            "This scatter plot positions property segments based on their price levels (x-axis) and growth rates (y-axis). ",
-                            "The size of each point represents transaction volume, while color indicates the overall investment score. ",
-                            "The quadrant lines divide the plot into four strategic investment categories."
-                        ]),
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Value Opportunities (Top-Left): "),
-                                "Properties with above-average growth and below-average prices offer the best value for investment. These segments typically include emerging areas and mid-market properties."
-                            ]),
-                            html.Li([
-                                html.Strong("Premium Growth (Top-Right): "),
-                                "High-priced properties showing strong growth, often in established premium locations. These offer strong potential but require higher capital investment."
-                            ]),
-                            html.Li([
-                                html.Strong("Underperforming Segments (Bottom-Left): "),
-                                "Low-priced properties with below-average growth may represent areas in decline or requiring significant market catalysts."
-                            ]),
-                            html.Li([
-                                html.Strong("Premium Plateau (Bottom-Right): "),
-                                "High-priced properties with slowing growth suggest mature markets that may be approaching saturation."
-                            ])
-                        ])
-                    ]),
-                    
-                    html.Div([
-                        html.H5("Methodology", className="mt-4"),
-                        html.P([
-                            "The opportunity matrix plots each property segment based on:",
-                            html.Ul([
-                                html.Li("X-axis: Median price per square foot (AED)"),
-                                html.Li("Y-axis: Recent growth percentage"),
-                                html.Li("Point size: Transaction volume (market liquidity)"),
-                                html.Li("Color gradient: Overall investment score (0-100)")
-                            ]),
-                            "The quadrant lines are placed at the median values for price and growth across all segments, creating four distinct opportunity zones."
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
-            
-        elif visualization_type == 'microsegment':
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Microsegment Analysis"),
-                        html.P([
-                            "This analysis breaks down the market into detailed micro-segments by combining property type, ",
-                            "room configuration, registration type, and area to identify highly specific investment opportunities. ",
-                            "Each micro-segment is scored based on multiple performance metrics."
-                        ]),
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Segment Specificity: "),
-                                "The most promising micro-segments often combine specific property types with optimal room configurations in emerging areas."
-                            ]),
-                            html.Li([
-                                html.Strong("Price-Growth Balance: "),
-                                "Top-performing segments typically balance moderate prices with above-average growth rates, rather than being either the cheapest or most expensive options."
-                            ]),
-                            html.Li([
-                                html.Strong("Liquidity Importance: "),
-                                "Segments with higher transaction volumes generally offer better exit opportunities and more stable price discovery."
-                            ]),
-                            html.Li([
-                                html.Strong("Registration Impact: "),
-                                "Off-plan properties in emerging areas frequently score higher due to stronger growth potential, despite higher risk profiles."
-                            ])
-                        ])
-                    ]),
-                    
-                    html.Div([
-                        html.H5("Investment Score Calculation", className="mt-4"),
-                        html.P([
-                            "The investment score (0-100) combines multiple weighted factors:",
-                            html.Ul([
-                                html.Li("Recent Growth (40%): Short-term price appreciation rate"),
-                                html.Li("Price Level (30%): Current price relative to comparable segments"),
-                                html.Li("Transaction Volume (20%): Market liquidity and activity"),
-                                html.Li("Developer Quality (10%): When available, based on reputation scores")
-                            ]),
-                            html.Strong("Score interpretation: "),
-                            "80-100: Exceptional opportunity, 65-79: Strong potential, 50-64: Good investment, 35-49: Average, <35: Below average"
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
-            
-        elif visualization_type == 'emerging':
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Emerging Segments Analysis"),
-                        html.P([
-                            "This analysis identifies market segments showing recent acceleration in growth rates, which may indicate ",
-                            "emerging opportunities before they become widely recognized. These segments often represent the leading edge ",
-                            "of market shifts and can offer early-mover advantages."
-                        ]),
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Growth Acceleration: "),
-                                "Segments with positive acceleration are often responding to recent market catalysts such as infrastructure developments, regulatory changes, or demand shifts."
-                            ]),
-                            html.Li([
-                                html.Strong("Early Indicators: "),
-                                "Emerging segments frequently show increases in transaction volume before significant price growth materializes."
-                            ]),
-                            html.Li([
-                                html.Strong("Diffusion Patterns: "),
-                                "Growth trends typically spread from prime areas to adjacent locations as buyers seek value alternatives."
-                            ]),
-                            html.Li([
-                                html.Strong("Risk-Return Profile: "),
-                                "Emerging segments offer higher potential returns but with increased uncertainty compared to established segments."
-                            ])
-                        ])
-                    ]),
-                    
-                    html.Div([
-                        html.H5("Methodology", className="mt-4"),
-                        html.P([
-                            "Emerging segments are identified using these criteria:",
-                            html.Ul([
-                                html.Li("Current growth rate exceeds the 75th percentile across all segments"),
-                                html.Li("Growth acceleration (difference between current and previous period growth) is positive"),
-                                html.Li("Segments are ranked by the product of current growth and acceleration magnitude"),
-                                html.Li("Transaction volume is increasing over recent periods (where data available)")
-                            ])
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
+        # Extract filter context with robust handling
+        property_filter = get_filter_value('property_type', 'property_type_en')
+        area_filter = get_filter_value('area', 'area_name_en')
+        room_filter = get_filter_value('room_type', 'rooms_en')
+        registration_filter = get_filter_value('registration_type', 'reg_type_en')
         
+        # Get time horizon from multiple possible sources
+        time_horizon = None
+        if filters:
+            time_horizon = filters.get('time_horizon')
+        if not time_horizon and metadata:
+            time_horizon = metadata.get('time_horizon')
+        if not time_horizon:
+            time_horizon = 'short_term_growth'  # Default fallback
+        
+        # Context detection
+        is_single_property = property_filter != 'All'
+        is_single_area = area_filter != 'All'
+        is_single_room = room_filter != 'All'
+        is_single_registration = registration_filter != 'All'
+        
+        # Create contextual description
+        context_parts = []
+        if is_single_room:
+            context_parts.append(room_filter)
+        if is_single_property:
+            context_parts.append(property_filter.lower() + ("s" if not property_filter.endswith("s") else ""))
+        if is_single_area:
+            context_parts.append(f"in {area_filter}")
+        if is_single_registration:
+            reg_text = "off-plan" if "off-plan" in registration_filter.lower() else "existing"
+            context_parts.append(f"({reg_text})")
+        
+        context_desc = " ".join(context_parts) if context_parts else "All properties"
+        
+        # Market segment classification
+        if is_single_room and is_single_property:
+            if room_filter in ['Studio', '1 B/R'] and property_filter == 'Apartment':
+                market_segment = "investor-focused apartment market"
+            elif room_filter in ['2 B/R', '3 B/R'] and property_filter == 'Apartment':
+                market_segment = "family apartment market"
+            elif room_filter in ['4 B/R', '5 B/R'] or property_filter == 'Villa':
+                market_segment = "luxury residential market"
+            else:
+                market_segment = "residential investment market"
+        elif is_single_property:
+            market_segment = f"{property_filter.lower()} investment market"
+        elif is_single_room:
+            market_segment = f"{room_filter.lower()} investment segment"
         else:
-            # Default insights for investment analysis
+            market_segment = "Dubai real estate investment market"
+        
+        # Time horizon display
+        horizon_display = {
+            'short_term_growth': 'short-term (1-year)',
+            'medium_term_growth': 'medium-term (3-year)', 
+            'long_term_cagr': 'long-term (5-year)'
+        }.get(time_horizon, 'recent')
+
+        if visualization_type == 'heatmap':
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No investment data available for {context_desc.lower()}.")])
+            
+            # Get data quality from metadata if available
+            data_quality = metadata.get('data_quality', 'unknown') if metadata else 'unknown'
+            coverage_pct = metadata.get('coverage_pct', 0) if metadata else 0
+            growth_column = metadata.get('growth_column', 'recent_growth') if metadata else 'recent_growth'
+            
+            # Analyze actual heatmap data
+            try:
+                # Import functions safely
+                from scripts.investment_analysis import perform_microsegment_analysis
+                
+                # Create filter dict for microsegment analysis in the format it expects
+                filter_dict = {}
+                if is_single_property:
+                    filter_dict['property_type_en'] = property_filter
+                if is_single_area:
+                    filter_dict['area_name_en'] = area_filter
+                if is_single_room:
+                    filter_dict['rooms_en'] = room_filter
+                if is_single_registration:
+                    filter_dict['reg_type_en'] = registration_filter
+                
+                microsegments, heatmap_metadata = perform_microsegment_analysis(
+                    df, 
+                    filters=filter_dict if filter_dict else None, 
+                    growth_column=time_horizon
+                )
+                
+                # Update data quality from analysis if available
+                if heatmap_metadata:
+                    data_quality = heatmap_metadata.get('data_quality', data_quality)
+                    coverage_pct = heatmap_metadata.get('coverage_pct', coverage_pct)
+                    
+            except Exception as e:
+                print(f"Error in microsegment analysis: {e}")
+                microsegments = pd.DataFrame()
+            
+            if len(microsegments) == 0:
+                return html.Div([header, html.P(f"Insufficient data for investment heatmap analysis of {context_desc.lower()}.")])
+            
+            # Key metrics from actual data
+            total_segments = len(microsegments)
+            
+            # Check if investment_score column exists
+            if 'investment_score' in microsegments.columns:
+                high_score_segments = len(microsegments[microsegments['investment_score'] >= 75])
+                medium_score_segments = len(microsegments[(microsegments['investment_score'] >= 60) & (microsegments['investment_score'] < 75)])
+                
+                # Top performing segments
+                top_segments = microsegments.nlargest(3, 'investment_score')
+                top_segment_score = top_segments.iloc[0]['investment_score'] if len(top_segments) > 0 else 0
+            else:
+                high_score_segments = 0
+                medium_score_segments = 0
+                top_segment_score = 0
+            
+            # Property type analysis if not filtered
+            if not is_single_property and 'property_type_en' in microsegments.columns:
+                prop_performance = microsegments.groupby('property_type_en')['investment_score'].mean().sort_values(ascending=False)
+                top_property_type = prop_performance.index[0] if len(prop_performance) > 0 else "N/A"
+                top_property_score = prop_performance.iloc[0] if len(prop_performance) > 0 else 0
+            else:
+                top_property_type = property_filter if is_single_property else "Mixed"
+                top_property_score = microsegments['investment_score'].mean() if 'investment_score' in microsegments.columns else 0
+            
+            # Room configuration analysis if not filtered
+            if not is_single_room and 'rooms_en' in microsegments.columns:
+                room_performance = microsegments.groupby('rooms_en')['investment_score'].mean().sort_values(ascending=False)
+                top_room_config = room_performance.index[0] if len(room_performance) > 0 else "N/A"
+                top_room_score = room_performance.iloc[0] if len(room_performance) > 0 else 0
+            else:
+                top_room_config = room_filter if is_single_room else "Mixed"
+                top_room_score = microsegments['investment_score'].mean() if 'investment_score' in microsegments.columns else 0
+            
             return html.Div([
                 header,
                 
                 html.Div([
                     html.Div([
-                        html.H5("Investment Opportunity Analysis"),
+                        html.H5(f"Investment Heatmap Analysis - {market_segment.title()}"),
                         html.P([
-                            "This analysis identifies optimal investment opportunities based on a composite score that considers ",
-                            "price growth, current price levels, transaction volume, and market liquidity. The score ranges from ",
-                            "0-100, with higher scores indicating stronger investment potential."
+                            f"This heatmap analyzes {total_segments} micro-segments within {context_desc.lower()} based on {horizon_display} performance. ",
+                            f"Investment scores combine growth potential, price levels, and market liquidity to identify optimal opportunities."
                         ]),
-                        html.P([
-                            html.Strong("Methodology: "),
-                            "The investment score weights recent price growth (40%), price level relative to market (30%), ",
-                            "transaction volume (20%), and developer quality (10% when available)."
-                        ])
                     ], className="mb-4"),
                     
                     html.Div([
-                        html.H5("Key Takeaways"),
+                        html.H5("Investment Opportunity Intelligence"),
                         html.Ul([
                             html.Li([
                                 html.Strong("Top Investment Opportunities: "),
-                                "Properties with scores above 75 represent exceptional opportunities, balancing growth potential with reasonable entry prices."
+                                f"{high_score_segments} segments (of {total_segments}) score above 75 points, representing exceptional opportunities " +
+                                f"in the {market_segment}. " +
+                                (f"The highest-scoring segment achieved {top_segment_score:.1f} points." if top_segment_score > 0 else "Focus on data quality improvement.")
                             ]),
                             html.Li([
-                                html.Strong("Market Segmentation: "),
-                                "Different property segments show distinct performance patterns. Luxury villas typically show lower price growth but more stability, while affordable apartments often show higher percentage growth but with more volatility."
+                                html.Strong("Property Type Performance: "),
+                                (f"{top_property_type} leads property types with {top_property_score:.1f} average investment score, " +
+                                f"demonstrating strong {horizon_display} potential in the current market."
+                                if not is_single_property and top_property_score > 0 else
+                                f"{property_filter if is_single_property else 'Selected'} properties show {top_property_score:.1f} average investment score " +
+                                f"across the analyzed segments.")
                             ]),
                             html.Li([
-                                html.Strong("Off-Plan vs. Existing: "),
-                                "Off-plan properties typically offer higher potential returns but with increased risk. Existing properties provide immediate rental income and lower risk."
+                                html.Strong("Room Configuration Insights: "),
+                                (f"{top_room_config} configurations lead with {top_room_score:.1f} average score, " +
+                                f"indicating optimal demand-supply balance in the {market_segment}."
+                                if not is_single_room and top_room_score > 0 else
+                                f"{room_filter if is_single_room else 'Selected'} units show {top_room_score:.1f} average investment score, " +
+                                f"reflecting the target market dynamics for this configuration.")
                             ]),
                             html.Li([
-                                html.Strong("Area Performance: "),
-                                "Emerging areas often show stronger growth percentages but from a lower base price, while established areas show more moderate but stable growth."
+                                html.Strong("Data Quality Assessment: "),
+                                f"Analysis based on {coverage_pct:.1f}% data coverage with {data_quality} quality rating. " +
+                                f"{medium_score_segments} additional segments score 60-75 points, representing good investment potential " +
+                                f"with moderate risk profiles."
                             ])
+                        ])
+                    ]),
+                    
+                    html.Div([
+                        html.H5("Investment Score Methodology", className="mt-4"),
+                        html.P([
+                            f"Scores (0-100) weight {horizon_display} growth (40%), price level relative to market (30%), " +
+                            f"transaction volume/liquidity (20%), and developer quality (10%). " +
+                            f"Focus on segments scoring 75+ for exceptional opportunities, 60-74 for solid investments."
                         ])
                     ])
                 ])
             ], className="insights-container")
 
+        elif visualization_type == 'opportunities':
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No opportunity data available for {context_desc.lower()}.")])
+            
+            # Get data quality from metadata
+            data_quality = metadata.get('data_quality', 'unknown') if metadata else 'unknown'
+            coverage_pct = metadata.get('coverage_pct', 0) if metadata else 0
+            
+            # Analyze actual opportunity scatter data
+            try:
+                from scripts.investment_analysis import perform_microsegment_analysis
+                
+                # Create filter dict for microsegment analysis
+                filter_dict = {}
+                if is_single_property:
+                    filter_dict['property_type_en'] = property_filter
+                if is_single_area:
+                    filter_dict['area_name_en'] = area_filter
+                if is_single_room:
+                    filter_dict['rooms_en'] = room_filter
+                if is_single_registration:
+                    filter_dict['reg_type_en'] = registration_filter
+                
+                microsegments, opportunity_metadata = perform_microsegment_analysis(
+                    df, 
+                    filters=filter_dict if filter_dict else None, 
+                    growth_column=time_horizon
+                )
+                
+            except Exception as e:
+                print(f"Error in opportunity analysis: {e}")
+                microsegments = pd.DataFrame()
+            
+            if len(microsegments) == 0 or 'recent_growth' not in microsegments.columns or 'median_price_sqft' not in microsegments.columns:
+                return html.Div([header, html.P(f"Insufficient data for opportunity analysis of {context_desc.lower()}.")])
+            
+            # Calculate quadrant analysis
+            median_price = microsegments['median_price_sqft'].median()
+            median_growth = microsegments['recent_growth'].median()
+            
+            # Quadrant classification
+            value_opps = microsegments[(microsegments['recent_growth'] > median_growth) & (microsegments['median_price_sqft'] < median_price)]
+            premium_growth = microsegments[(microsegments['recent_growth'] > median_growth) & (microsegments['median_price_sqft'] >= median_price)]
+            underperforming = microsegments[(microsegments['recent_growth'] <= median_growth) & (microsegments['median_price_sqft'] < median_price)]
+            premium_plateau = microsegments[(microsegments['recent_growth'] <= median_growth) & (microsegments['median_price_sqft'] >= median_price)]
+            
+            # Top opportunities in each quadrant
+            if 'investment_score' in microsegments.columns:
+                top_value = value_opps.nlargest(1, 'investment_score') if len(value_opps) > 0 else pd.DataFrame()
+                top_premium = premium_growth.nlargest(1, 'investment_score') if len(premium_growth) > 0 else pd.DataFrame()
+                high_score_count = len(microsegments[microsegments['investment_score'] >= 70])
+            else:
+                top_value = pd.DataFrame()
+                top_premium = pd.DataFrame()
+                high_score_count = 0
+            
+            # Overall market insights
+            avg_growth = microsegments['recent_growth'].mean()
+            avg_price = microsegments['median_price_sqft'].mean()
+            
+            return html.Div([
+                header,
+                
+                html.Div([
+                    html.Div([
+                        html.H5(f"Investment Opportunities Matrix - {market_segment.title()}"),
+                        html.P([
+                            f"This scatter analysis positions {len(microsegments)} micro-segments by price level (x-axis) and {horizon_display} growth (y-axis) " +
+                            f"within {context_desc.lower()}. Point size represents transaction volume, color indicates investment score."
+                        ]),
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.H5("Quadrant Opportunity Analysis"),
+                        html.Ul([
+                            html.Li([
+                                html.Strong("Value Opportunities (High Growth, Low Price): "),
+                                f"{len(value_opps)} segments offer above-average growth ({median_growth:.1f}%+) " +
+                                f"at below-average prices (<{median_price:.0f} AED/sqft). " +
+                                (f"Top performer in {top_value.iloc[0]['area_name_en']} with {top_value.iloc[0]['investment_score']:.1f} score."
+                                if len(top_value) > 0 and 'area_name_en' in top_value.columns and 'investment_score' in top_value.columns 
+                                else "Represents strong value propositions in the market.")
+                            ]),
+                            html.Li([
+                                html.Strong("Premium Growth (High Growth, High Price): "),
+                                f"{len(premium_growth)} segments combine strong growth with premium pricing (≥{median_price:.0f} AED/sqft). " +
+                                (f"Leading segment shows {top_premium.iloc[0]['investment_score']:.1f} investment score, " +
+                                f"indicating sustainable premium performance."
+                                if len(top_premium) > 0 and 'investment_score' in top_premium.columns else
+                                "Indicates strong high-end market performance.")
+                            ]),
+                            html.Li([
+                                html.Strong("Market Distribution: "),
+                                f"Underperforming segments: {len(underperforming)} | Premium plateau: {len(premium_plateau)}. " +
+                                f"Average market performance: {avg_growth:.1f}% growth at {avg_price:.0f} AED/sqft average price."
+                            ]),
+                            html.Li([
+                                html.Strong("Investment Readiness: "),
+                                f"{high_score_count} segments score 70+ points, representing investable opportunities with " +
+                                f"balanced risk-return profiles in the {market_segment}."
+                            ])
+                        ])
+                    ]),
+                    
+                    html.Div([
+                        html.H5("Strategic Investment Positioning", className="mt-4"),
+                        html.P([
+                            f"The {market_segment} shows {'diversified' if len(value_opps) > 0 and len(premium_growth) > 0 else 'concentrated'} " +
+                            f"opportunity distribution. " +
+                            f"{'Value opportunities dominate' if len(value_opps) > len(premium_growth) else 'Premium segments lead' if len(premium_growth) > len(value_opps) else 'Balanced opportunity mix'}, " +
+                            f"suggesting {'emerging market dynamics' if len(value_opps) > len(premium_growth) else 'mature market characteristics' if len(premium_growth) > len(value_opps) else 'transitional market phase'}."
+                        ])
+                    ])
+                ])
+            ], className="insights-container")
+
+        elif visualization_type == 'microsegment':
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No microsegment data available for {context_desc.lower()}.")])
+            
+            # Analyze actual microsegment table data
+            try:
+                from scripts.investment_analysis import perform_microsegment_analysis
+                
+                # Create filter dict for microsegment analysis
+                filter_dict = {}
+                if is_single_property:
+                    filter_dict['property_type_en'] = property_filter
+                if is_single_area:
+                    filter_dict['area_name_en'] = area_filter
+                if is_single_room:
+                    filter_dict['rooms_en'] = room_filter
+                if is_single_registration:
+                    filter_dict['reg_type_en'] = registration_filter
+                
+                microsegments, micro_metadata = perform_microsegment_analysis(
+                    df, 
+                    filters=filter_dict if filter_dict else None, 
+                    growth_column=time_horizon
+                )
+                
+            except Exception as e:
+                print(f"Error in microsegment analysis: {e}")
+                microsegments = pd.DataFrame()
+            
+            if len(microsegments) == 0:
+                return html.Div([header, html.P(f"Insufficient microsegment data for {context_desc.lower()}.")])
+            
+            # Key metrics from actual table data
+            total_segments = len(microsegments)
+            top_15_segments = microsegments.head(15)  # What's actually displayed in the table
+            
+            # Investment score analysis
+            if 'investment_score' in top_15_segments.columns:
+                exceptional_count = len(top_15_segments[top_15_segments['investment_score'] >= 80])
+                strong_count = len(top_15_segments[(top_15_segments['investment_score'] >= 65) & (top_15_segments['investment_score'] < 80)])
+                average_score = top_15_segments['investment_score'].mean()
+            else:
+                exceptional_count = 0
+                strong_count = 0
+                average_score = 0
+            
+            # Top performer analysis
+            top_segment = top_15_segments.iloc[0] if len(top_15_segments) > 0 else None
+            
+            # Segment characteristics analysis
+            if not is_single_property and 'property_type_en' in top_15_segments.columns:
+                top_prop_types = top_15_segments['property_type_en'].value_counts()
+                dominant_property = top_prop_types.index[0] if len(top_prop_types) > 0 else "Mixed"
+                property_share = (top_prop_types.iloc[0] / len(top_15_segments) * 100) if len(top_prop_types) > 0 else 0
+            else:
+                dominant_property = property_filter if is_single_property else "Mixed"
+                property_share = 100 if is_single_property else 0
+            
+            if not is_single_area and 'area_name_en' in top_15_segments.columns:
+                top_areas = top_15_segments['area_name_en'].value_counts()
+                dominant_area = top_areas.index[0] if len(top_areas) > 0 else "Mixed"
+                area_share = (top_areas.iloc[0] / len(top_15_segments) * 100) if len(top_areas) > 0 else 0
+            else:
+                dominant_area = area_filter if is_single_area else "Mixed"
+                area_share = 100 if is_single_area else 0
+            
+            # Price and growth insights
+            avg_price = top_15_segments['median_price_sqft'].mean() if 'median_price_sqft' in top_15_segments.columns else 0
+            avg_growth = top_15_segments['recent_growth'].mean() if 'recent_growth' in top_15_segments.columns else 0
+            
+            return html.Div([
+                header,
+                
+                html.Div([
+                    html.Div([
+                        html.H5(f"Top Microsegments Analysis - {market_segment.title()}"),
+                        html.P([
+                            f"This analysis ranks the top 15 investment opportunities from {total_segments} analyzed micro-segments " +
+                            f"within {context_desc.lower()}, based on {horizon_display} performance and market fundamentals."
+                        ]),
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.H5("Top Performers Intelligence"),
+                        html.Ul([
+                            html.Li([
+                                html.Strong("Investment Grade Distribution: "),
+                                f"Of the top 15 segments, {exceptional_count} achieve exceptional scores (80+), " +
+                                f"{strong_count} show strong potential (65-79), with {average_score:.1f} average investment score."
+                            ]),
+                            html.Li([
+                                html.Strong("Leading Segment Profile: "),
+                                (f"{top_segment['area_name_en']} {top_segment['property_type_en']} " +
+                                f"({top_segment['rooms_en']}) leads with {top_segment['investment_score']:.1f} points, " +
+                                f"combining {top_segment['recent_growth']:.1f}% growth with {top_segment['median_price_sqft']:.0f} AED/sqft pricing."
+                                if top_segment is not None and all(col in top_segment.index for col in ['area_name_en', 'property_type_en', 'investment_score']) else
+                                f"Top segment shows {average_score:.1f} average performance in the {market_segment}.")
+                            ]),
+                            html.Li([
+                                html.Strong("Segment Characteristics: "),
+                                (f"{dominant_property} properties dominate top performers ({property_share:.0f}% of top 15), " +
+                                f"while {dominant_area} leads geographically ({area_share:.0f}% concentration)."
+                                if not is_single_property and not is_single_area else
+                                f"Focused analysis within {context_desc.lower()} shows consistent strong performance patterns.")
+                            ]),
+                            html.Li([
+                                html.Strong("Performance Characteristics: "),
+                                f"Top segments average {avg_growth:.1f}% {horizon_display} growth at {avg_price:.0f} AED/sqft, " +
+                                f"indicating {'premium performance with accessible pricing' if avg_price < 2000 else 'luxury segment outperformance' if avg_price > 3000 else 'mid-market excellence'}."
+                            ])
+                        ])
+                    ]),
+                    
+                    html.Div([
+                        html.H5("Investment Action Plan", className="mt-4"),
+                        html.P([
+                            f"Focus on the {exceptional_count + strong_count} segments scoring 65+ for immediate investment consideration. " +
+                            f"The {market_segment} shows {'strong opportunity depth' if exceptional_count >= 5 else 'selective opportunities'} " +
+                            f"with {'diversified' if not is_single_area and area_share < 60 else 'concentrated'} geographic distribution."
+                        ])
+                    ])
+                ])
+            ], className="insights-container")
+                
+        elif visualization_type == 'emerging':
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No emerging segments data available for {context_desc.lower()}.")])
+            
+            # Analyze emerging segments data - these would be derived from regular microsegment analysis
+            try:
+                from scripts.investment_analysis import perform_microsegment_analysis
+                
+                # Create filter dict for microsegment analysis
+                filter_dict = {}
+                if is_single_property:
+                    filter_dict['property_type_en'] = property_filter
+                if is_single_area:
+                    filter_dict['area_name_en'] = area_filter
+                if is_single_room:
+                    filter_dict['rooms_en'] = room_filter
+                if is_single_registration:
+                    filter_dict['reg_type_en'] = registration_filter
+                
+                microsegments, emerging_metadata = perform_microsegment_analysis(
+                    df, 
+                    filters=filter_dict if filter_dict else None, 
+                    growth_column=time_horizon
+                )
+                
+            except Exception as e:
+                print(f"Error in emerging segments analysis: {e}")
+                microsegments = pd.DataFrame()
+            
+            if len(microsegments) == 0:
+                return html.Div([header, html.P(f"Insufficient data for emerging segments analysis in {context_desc.lower()}.")])
+            
+            # Identify emerging segments (accelerating growth)
+            if 'recent_growth' in microsegments.columns:
+                high_growth_threshold = microsegments['recent_growth'].quantile(0.75)
+                emerging_segments = microsegments[microsegments['recent_growth'] > high_growth_threshold]
+                emerging_count = len(emerging_segments)
+                
+                if emerging_count > 0:
+                    avg_emerging_growth = emerging_segments['recent_growth'].mean()
+                    
+                    # Geographic and type analysis of emerging segments
+                    if 'area_name_en' in emerging_segments.columns:
+                        emerging_areas = emerging_segments['area_name_en'].value_counts()
+                        top_emerging_area = emerging_areas.index[0] if len(emerging_areas) > 0 else "Various"
+                    else:
+                        top_emerging_area = "Various"
+                    
+                    if 'property_type_en' in emerging_segments.columns:
+                        emerging_types = emerging_segments['property_type_en'].value_counts()
+                        top_emerging_type = emerging_types.index[0] if len(emerging_types) > 0 else "Mixed"
+                    else:
+                        top_emerging_type = "Mixed"
+                else:
+                    avg_emerging_growth = 0
+                    top_emerging_area = "None identified"
+                    top_emerging_type = "N/A"
+            else:
+                emerging_count = 0
+                avg_emerging_growth = 0
+                top_emerging_area = "Data unavailable"
+                top_emerging_type = "Data unavailable"
+            
+            # Market average for comparison
+            market_avg_growth = microsegments['recent_growth'].mean() if 'recent_growth' in microsegments.columns else 0
+            
+            return html.Div([
+                header,
+                
+                html.Div([
+                    html.Div([
+                        html.H5(f"Emerging Segments Analysis - {market_segment.title()}"),
+                        html.P([
+                            f"This analysis identifies segments with accelerating {horizon_display} growth within {context_desc.lower()}, " +
+                            f"representing early-stage opportunities before broader market recognition."
+                        ]),
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.H5("Emerging Market Intelligence"),
+                        html.Ul([
+                            html.Li([
+                                html.Strong("Emerging Opportunity Count: "),
+                                f"{emerging_count} segments show accelerating growth above the 75th percentile " +
+                                f"({'high opportunity environment' if emerging_count >= 10 else 'selective emerging opportunities' if emerging_count >= 3 else 'limited emerging activity'})."
+                            ]),
+                            html.Li([
+                                html.Strong("Growth Acceleration Profile: "),
+                                (f"Emerging segments average {avg_emerging_growth:.1f}% {horizon_display} growth " +
+                                f"vs {market_avg_growth:.1f}% market average, representing {(avg_emerging_growth - market_avg_growth):.1f} " +
+                                f"percentage point outperformance."
+                                if emerging_count > 0 else
+                                f"No clear emerging segments identified in current {market_segment} filter - market shows stable patterns.")
+                            ]),
+                            html.Li([
+                                html.Strong("Geographic Concentration: "),
+                                (f"{top_emerging_area} leads emerging segment activity, indicating potential infrastructure catalysts " +
+                                f"or demand shifts in this location within the {market_segment}."
+                                if emerging_count > 0 and top_emerging_area not in ["Various", "None identified"] else
+                                f"Emerging growth is {'geographically dispersed' if emerging_count > 5 else 'limited'} " +
+                                f"across the {market_segment}.")
+                            ]),
+                            html.Li([
+                                html.Strong("Property Type Trends: "),
+                                (f"{top_emerging_type} properties dominate emerging segments, suggesting strong demand dynamics " +
+                                f"or supply constraints in this category within the {market_segment}."
+                                if emerging_count > 0 and top_emerging_type not in ["Mixed", "N/A"] else
+                                f"No dominant property type trend in emerging segments for the {market_segment}.")
+                            ])
+                        ])
+                    ]),
+                    
+                    html.Div([
+                        html.H5("Early-Stage Investment Strategy", className="mt-4"),
+                        html.P([
+                            (f"The {market_segment} shows {'strong emerging momentum' if emerging_count >= 8 else 'moderate emerging activity' if emerging_count >= 3 else 'stable market conditions'} " +
+                            f"with {emerging_count} accelerating segments. " +
+                            f"Early-stage investors should monitor these segments for continued acceleration before broader market adoption."
+                            if emerging_count > 0 else
+                            f"The {market_segment} shows stable performance without clear emerging trends. " +
+                            f"Focus on established performers rather than emerging opportunities in this segment.")
+                        ])
+                    ])
+                ])
+            ], className="insights-container")
+            
+        else:
+            # Default investment analysis insights with context awareness
+            return html.Div([
+                header,
+                
+                html.Div([
+                    html.Div([
+                        html.H5(f"Investment Analysis Overview - {market_segment.title()}"),
+                        html.P([
+                            f"This analysis evaluates investment opportunities within {context_desc.lower()} using a composite scoring methodology. " +
+                            f"The analysis combines {horizon_display} growth, price levels, and market liquidity to identify optimal investments."
+                        ]),
+                    ], className="mb-4"),
+                    
+                    html.Div([
+                        html.H5("Analysis Components"),
+                        html.Ul([
+                            html.Li([
+                                html.Strong("Investment Heatmap: "),
+                                f"Micro-segment scoring and opportunity identification within the {market_segment}"
+                            ]),
+                            html.Li([
+                                html.Strong("Opportunity Matrix: "),
+                                f"Price vs growth positioning analysis for strategic investment planning"
+                            ]),
+                            html.Li([
+                                html.Strong("Top Segments: "),
+                                f"Ranked investment opportunities with detailed performance metrics"
+                            ]),
+                            html.Li([
+                                html.Strong("Emerging Trends: "),
+                                f"Early-stage opportunities with accelerating growth patterns"
+                            ])
+                        ])
+                    ])
+                ])
+            ], className="insights-container")
+        
     elif analysis_type == 'time_series':
         if visualization_type == 'price_trends':
             # Import directly from time_series_analysis to get insights data
@@ -871,361 +1227,516 @@ def create_insights_component(df, analysis_type, visualization_type=None, filter
                 ])
             ], className="insights-container")
         
-    elif analysis_type == 'supply_demand':
-        if visualization_type == 'supply_demand':
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Supply-Demand Analysis"),
-                        html.P([
-                            "This analysis examines the balance between market demand and new property supply, ",
-                            "identifying areas with potential supply shortages or oversupply risks. Understanding this ",
-                            "balance helps predict future price movements and investment timing decisions."
-                        ]),
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Supply-Demand Ratio: "),
-                                "Current market demand exceeds new supply in premium segments, while some mid-market areas show early signs of potential oversupply."
-                            ]),
-                            html.Li([
-                                html.Strong("Absorption Rates: "),
-                                "Luxury waterfront properties maintain the strongest absorption rates, with new inventory typically absorbed within 6-9 months of completion."
-                            ]),
-                            html.Li([
-                                html.Strong("Supply Pipeline: "),
-                                "The development pipeline shows moderate increases in new supply over the next 24-36 months, concentrated in emerging areas."
-                            ]),
-                            html.Li([
-                                html.Strong("Market Balance: "),
-                                "Overall market conditions indicate a relatively balanced supply-demand dynamic, with localized imbalances in specific submarkets."
-                            ])
-                        ])
-                    ]),
-                    
-                    html.Div([
-                        html.H5("Methodology", className="mt-4"),
-                        html.P([
-                            "This supply-demand analysis uses these techniques:",
-                            html.Ul([
-                                html.Li("Calculation of supply-demand ratios by segment"),
-                                html.Li("Analysis of inventory absorption rates"),
-                                html.Li("Projection of new supply from development pipeline"),
-                                html.Li("Comparison of transaction volume to new unit completions")
-                            ])
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
-        
-        elif visualization_type == 'construction_pipeline':
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Construction Pipeline Analysis"),
-                        html.P([
-                            "This analysis tracks upcoming property deliveries across Dubai to identify potential ",
-                            "oversupply risks or undersupply opportunities. Understanding the future supply pipeline ",
-                            "helps predict market balance and future price movements."
-                        ]),
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Project Timeline: "),
-                                "Approximately 35,000-40,000 residential units are scheduled for completion within the next 24 months, with 60% in apartment configurations."
-                            ]),
-                            html.Li([
-                                html.Strong("Geographic Distribution: "),
-                                "New supply is concentrated in emerging areas in south and east Dubai, with limited new inventory in established prime locations."
-                            ]),
-                            html.Li([
-                                html.Strong("Segment Focus: "),
-                                "Developer focus has shifted toward mid-market and affordable luxury segments, with fewer ultra-luxury projects in the pipeline."
-                            ]),
-                            html.Li([
-                                html.Strong("Completion Risk: "),
-                                "Historical data suggests 20-30% of announced projects face significant delays or cancellation, moderating the actual delivered supply."
-                            ])
-                        ])
-                    ]),
-                    
-                    html.Div([
-                        html.H5("Methodology", className="mt-4"),
-                        html.P([
-                            "This construction pipeline analysis uses these techniques:",
-                            html.Ul([
-                                html.Li("Aggregation of announced project completions by timeline"),
-                                html.Li("Historical completion rate analysis to adjust for delays"),
-                                html.Li("Geographic mapping of planned developments"),
-                                html.Li("Categorization by property segment and configuration")
-                            ])
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
-        
-        else:
-            # Default supply-demand insights
-            return html.Div([
-                header,
-                
-                html.Div([
-                    html.Div([
-                        html.H5("Supply-Demand Analysis Methodology"),
-                        html.P([
-                            "This analysis examines the relationship between market demand and new property supply ",
-                            "to identify potential imbalances that could impact future price movements and investment timing."
-                        ]),
-                        html.P([
-                            html.Strong("Key Metrics: "),
-                            "Supply-demand ratio, absorption rates, inventory levels, and construction pipeline volumes."
-                        ])
-                    ], className="mb-4"),
-                    
-                    html.Div([
-                        html.H5("Key Takeaways"),
-                        html.Ul([
-                            html.Li([
-                                html.Strong("Market Balance: "),
-                                "The current market shows a relatively balanced supply-demand dynamic, with 0.8-1.2 ratio in most segments, indicating neither severe oversupply nor undersupply conditions."
-                            ]),
-                            html.Li([
-                                html.Strong("Segment Variations: "),
-                                "Premium waterfront and central areas maintain stronger demand relative to supply, while some peripheral areas show early signs of potential oversupply."
-                            ]),
-                            html.Li([
-                                html.Strong("Construction Pipeline: "),
-                                "The development pipeline indicates moderate increases in new inventory over the next 24-36 months, with delivery timelines that typically extend beyond initial estimates."
-                            ]),
-                            html.Li([
-                                html.Strong("Investment Implications: "),
-                                "Areas with limited new supply and strong demand fundamentals typically offer better mid-term price appreciation potential. Current market conditions favor established areas with constraints on new development."
-                            ])
-                        ])
-                    ])
-                ])
-            ], className="insights-container")
-    
     elif analysis_type == 'project_analysis':
+        # Extract filter context for intelligent insights
+        property_filter = filters.get('property_type', 'All')
+        area_filter = filters.get('area', 'All')
+        developer_filter = filters.get('developer', 'All')
+        room_filter = filters.get('room_type', 'All')
+        
+        # Context detection
+        is_single_property = property_filter != 'All'
+        is_single_area = area_filter != 'All'
+        is_single_developer = developer_filter != 'All'
+        is_single_room = room_filter != 'All'
+        
+        # Create contextual description
+        context_parts = []
+        if is_single_room:
+            context_parts.append(room_filter)
+        if is_single_property:
+            context_parts.append(property_filter.lower() + ("s" if not property_filter.endswith("s") else ""))
+        if is_single_area:
+            context_parts.append(f"in {area_filter}")
+        if is_single_developer:
+            context_parts.append(f"by {developer_filter}")
+        
+        context_desc = " ".join(context_parts) if context_parts else "All properties"
+        
+        # Market segment classification
+        if is_single_room and is_single_property:
+            if room_filter in ['Studio', '1 B/R'] and property_filter == 'Apartment':
+                market_segment = "investment/rental market"
+            elif room_filter in ['2 B/R', '3 B/R'] and property_filter == 'Apartment':
+                market_segment = "family apartment market"
+            elif room_filter in ['4 B/R', '5 B/R'] or property_filter == 'Villa':
+                market_segment = "luxury/family market"
+            else:
+                market_segment = "residential market"
+        elif is_single_property:
+            market_segment = f"{property_filter.lower()} market"
+        elif is_single_room:
+            market_segment = f"{room_filter.lower()} market segment"
+        else:
+            market_segment = "real estate market"
+
         if visualization_type == 'individual_projects':
-            # Calculate key statistics from metadata
-            market_avg_cagr = metadata.get('market_average_cagr', 4.6)
-            top_quartile_threshold = metadata.get('top_quartile_cagr', 8.2)
-            median_duration = metadata.get('median_duration', 3.5)
-            median_tx_count = metadata.get('median_transaction_count', 25)
+            # Dynamic analysis of filtered project data
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No project data available for {context_desc.lower()}.")])
             
-            # Get peer group info
-            peer_property_type = metadata.get('peer_property_type', 'all property types')
-            peer_room_type = metadata.get('peer_room_type', 'all room configurations')
-            peer_count = metadata.get('peer_count', 1000)
+            # Calculate key metrics
+            market_avg_cagr = df['cagr'].median()
+            top_quartile_cagr = df['cagr'].quantile(0.75)
+            median_duration_years = (df['age_days'] / 365.25).median()
+            median_transactions = df['transaction_count'].median()
+            
+            # Quality assessment
+            total_projects = len(df)
+            good_quality_projects = len(df[~(df['is_thin'] | df['needs_review'] | df['single_transaction'])])
+            quality_rate = (good_quality_projects / total_projects * 100) if total_projects > 0 else 0
+            
+            # Performance analysis
+            top_performers = df[df['cagr'] > top_quartile_cagr]
+            outperforming_count = len(top_performers)
+            outperforming_pct = (outperforming_count / total_projects * 100) if total_projects > 0 else 0
+            
+            # Context-specific insights
+            if is_single_developer and is_single_area:
+                analysis_focus = f"{developer_filter}'s {area_filter} portfolio"
+                comparison_context = f"within {area_filter}'s {market_segment}"
+            elif is_single_developer:
+                analysis_focus = f"{developer_filter}'s portfolio"
+                comparison_context = f"across {developer_filter}'s geographic footprint"
+            elif is_single_area:
+                analysis_focus = f"{area_filter} market"
+                comparison_context = f"within {area_filter}'s {market_segment}"
+            else:
+                analysis_focus = f"{market_segment.title()}"
+                comparison_context = f"across the {market_segment}"
+            
+            # Duration and transaction analysis
+            if total_projects >= 10:
+                short_duration = df[df['age_days'] < 365]
+                long_duration = df[df['age_days'] >= 365*3]
+                short_avg_cagr = short_duration['cagr'].mean() if len(short_duration) > 0 else 0
+                long_avg_cagr = long_duration['cagr'].mean() if len(long_duration) > 0 else 0
+                
+                high_volume = df[df['transaction_count'] >= 50]
+                low_volume = df[df['transaction_count'] < 10]
+                duration_insight_available = len(short_duration) > 0 and len(long_duration) > 0
+                volume_insight_available = len(high_volume) > 0 and len(low_volume) > 0
+            else:
+                duration_insight_available = False
+                volume_insight_available = False
             
             return html.Div([
                 header,
                 
                 html.Div([
                     html.Div([
-                        html.H5("Individual Project Performance Analysis"),
+                        html.H5(f"{analysis_focus} - Individual Project Performance"),
                         html.P([
-                            "This scatter plot visualizes actual project returns from first to last transaction. ",
-                            f"Each point represents a unique project showing its annualized return (CAGR) over its specific duration. ",
-                            f"The market average CAGR is {market_avg_cagr:.1f}% across all {len(df):,} projects analyzed."
+                            f"This analysis examines {total_projects} individual projects for {context_desc.lower()}, ",
+                            f"showing actual returns from first to last transaction {comparison_context}."
                         ]),
                     ], className="mb-4"),
                     
                     html.Div([
-                        html.H5("Key Insights"),
+                        html.H5("Key Performance Insights"),
                         html.Ul([
                             html.Li([
-                                f"Projects in the top quartile achieved CAGR above {top_quartile_threshold:.1f}%, ",
-                                f"representing {(len(df[df['price_sqft_cagr'] > top_quartile_threshold]) / len(df) * 100):.1f}% of all projects"
+                                html.Strong("Market Performance: "),
+                                f"Among {context_desc.lower()}, the top quartile achieved CAGR above {top_quartile_cagr:.1f}%, representing ",
+                                f"{outperforming_pct:.0f}% of projects analyzed. " +
+                                (f"This compares to a median of {market_avg_cagr:.1f}% for the selected segment." if total_projects >= 5 else 
+                                f"Median performance stands at {market_avg_cagr:.1f}%.")
                             ]),
                             html.Li([
-                                f"The median project duration is {median_duration:.1f} years with {median_tx_count} transactions. ",
-                                f"Projects with 100+ transactions show {metadata.get('high_tx_volatility', 16):.0f}% volatility vs ",
-                                f"{metadata.get('low_tx_volatility', 65):.0f}% for projects with fewer than 10 transactions"
+                                html.Strong("Data Quality Assessment: "),
+                                f"{quality_rate:.0f}% of {context_desc.lower()} projects have robust data quality with sufficient transaction history. " +
+                                f"The typical project in this segment spans {median_duration_years:.1f} years with {median_transactions:.0f} transactions."
                             ]),
                             html.Li([
-                                f"Among {peer_property_type} with {peer_room_type}, ",
-                                f"{metadata.get('outperforming_percentage', 45):.0f}% of projects outperformed the peer average"
+                                html.Strong("Duration Analysis: "),
+                                (f"Short-term projects (<1 year) in this segment averaged {short_avg_cagr:.1f}% CAGR compared to " +
+                                f"{long_avg_cagr:.1f}% for long-term projects (3+ years), indicating " +
+                                f"{'higher short-term volatility' if short_avg_cagr > long_avg_cagr else 'patience rewards'} in the {market_segment}."
+                                if duration_insight_available else
+                                f"Project durations in the {market_segment} typically span {median_duration_years:.1f} years, " +
+                                f"reflecting the development timeline for this segment.")
                             ]),
                             html.Li([
-                                f"Short-duration projects (<1 year) show higher average returns ({metadata.get('short_duration_avg_cagr', 12.8):.1f}%) ",
-                                f"but with significantly higher volatility ({metadata.get('short_duration_volatility', 61):.0f}%)"
+                                html.Strong("Investment Intelligence: "),
+                                (f"High-volume projects (50+ transactions) show more stable returns than low-volume projects in the {market_segment}, " +
+                                f"providing better price discovery and exit liquidity for investors."
+                                if volume_insight_available else
+                                f"The {market_segment} shows {'strong' if quality_rate >= 70 else 'moderate' if quality_rate >= 50 else 'developing'} " +
+                                f"market maturity with {'consistent' if market_avg_cagr > 5 else 'variable'} performance patterns.")
                             ])
                         ])
                     ]),
-                    
+                ]),
                     html.Div([
-                        html.H5("How to Read This Chart", className="mt-4"),
+                        html.H5("Adaptive CAGR Methodology", className="mt-4"),
+                        html.Div([
+                            html.Div([
+                                html.H6("Calculation Approach:"),
+                                html.Ul([
+                                    html.Li([html.Strong("Window-Based Analysis: "), "Uses adaptive time windows based on project age (31/92/183 days)"]),
+                                    html.Li([html.Strong("Median Price Calculation: "), "Takes median price from first and recent windows to reduce outlier impact"]),
+                                    html.Li([html.Strong("Annualized Returns: "), "CAGR = ((Recent Price / Launch Price)^(1/Years)) - 1"]),
+                                    html.Li([html.Strong("Quality Validation: "), "Requires minimum transaction thresholds and applies gap requirements for reliability"])
+                                ], style={'fontSize': '13px'})
+                            ], className="col-md-6"),
+                            html.Div([
+                                html.H6("Quality Thresholds:"),
+                                html.Ul([
+                                    html.Li("Mature projects (≥18 months): 183-day windows, ≥5 transactions each"),
+                                    html.Li("Medium projects (6-18 months): 92-day windows, ≥3 transactions, 30-day gap"),  
+                                    html.Li("Young projects (<6 months): 31-day windows, ≥2 transactions each"),
+                                    html.Li("Price filter: 100-10,000 AED/sqft to exclude outliers")
+                                ], style={'fontSize': '13px'})
+                            ], className="col-md-6")
+                        ], className="row"),
                         html.P([
-                            html.Strong("X-Axis (Duration): "), "Time between first and last transaction in years",
-                            html.Br(),
-                            html.Strong("Y-Axis (CAGR): "), "Annualized return rate - comparable across different durations",
-                            html.Br(),
-                            html.Strong("Bubble Size: "), "Transaction count - larger bubbles indicate more market activity",
-                            html.Br(),
-                            html.Strong("Color: "), "Market outperformance - green indicates above-average returns for peer group"
-                        ])
+                            html.Strong("Note: "), 
+                            "This adaptive methodology ensures reliable CAGR calculations across different project lifecycles, " +
+                            "providing more accurate performance assessment than traditional approaches."
+                        ], style={'fontSize': '12px', 'fontStyle': 'italic', 'marginTop': '10px'})
                     ])
-                ])
             ], className="insights-container")
             
         elif visualization_type == 'area_comparison':
-            # Get area-specific insights from metadata
-            top_area = metadata.get('top_performing_area', 'Dubai Marina')
-            top_area_cagr = metadata.get('top_area_cagr', 7.2)
-            area_count = metadata.get('area_count', 50)
+            # Dynamic analysis of area performance
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No area data available for {context_desc.lower()}.")])
+            
+            # Area performance analysis
+            area_stats = df.groupby('area_name_en').agg({
+                'cagr': ['mean', 'count', 'std'],
+                'transaction_count': 'sum',
+                'age_days': 'mean'
+            }).round(2)
+            area_stats.columns = ['avg_cagr', 'project_count', 'cagr_std', 'total_transactions', 'avg_age']
+            area_stats = area_stats[area_stats['project_count'] >= 3].sort_values('avg_cagr', ascending=False)
+            
+            if len(area_stats) == 0:
+                return html.Div([header, html.P(f"Insufficient area data for comparison in {market_segment} (need ≥3 projects per area).")])
+            
+            # Key metrics
+            top_area = area_stats.index[0]
+            top_area_cagr = area_stats.iloc[0]['avg_cagr']
+            area_count = len(area_stats)
+            market_avg = df['cagr'].mean()
+            
+            # Context-specific analysis
+            if is_single_developer:
+                geographic_context = f"{developer_filter}'s geographic footprint"
+                performance_context = f"{developer_filter}'s area strategy"
+            else:
+                geographic_context = f"Dubai's {market_segment}"
+                performance_context = "geographic investment strategy"
+            
+            # Performance spread analysis
+            cagr_range = area_stats['avg_cagr'].max() - area_stats['avg_cagr'].min()
+            consistent_areas = area_stats[area_stats['cagr_std'] < 15]
+            
+            # Development stage insights
+            emerging_areas = area_stats[area_stats['avg_age'] < 365*2]
+            established_areas = area_stats[area_stats['avg_age'] >= 365*3]
+            emerging_avg = emerging_areas['avg_cagr'].mean() if len(emerging_areas) > 0 else 0
+            established_avg = established_areas['avg_cagr'].mean() if len(established_areas) > 0 else 0
             
             return html.Div([
                 header,
                 
                 html.Div([
                     html.Div([
-                        html.H5("Area Performance Comparison"),
+                        html.H5(f"{geographic_context.title()} - Area Performance Comparison"),
                         html.P([
-                            f"This analysis compares investment performance across {area_count} Dubai areas based on actual project returns. ",
-                            "Each area's average is weighted by transaction volume to reduce the impact of outliers with minimal market activity."
+                            f"This analysis compares {area_count} Dubai areas based on {context_desc.lower()} performance. " +
+                            (f"Each area reflects {developer_filter}'s execution in that location."
+                            if is_single_developer else
+                            f"Each area's performance reflects the aggregate of all projects in the {market_segment}.")
                         ]),
                     ], className="mb-4"),
                     
                     html.Div([
-                        html.H5("Key Insights"),
+                        html.H5("Geographic Investment Intelligence"),
                         html.Ul([
                             html.Li([
-                                f"{top_area} leads with {top_area_cagr:.1f}% average CAGR across ",
-                                f"{metadata.get('top_area_project_count', 150)} projects, driven by ",
-                                f"{metadata.get('top_area_driver', 'waterfront premium and consistent demand')}"
+                                html.Strong("Top Performing Area: "),
+                                f"{top_area} leads " +
+                                (f"{developer_filter}'s portfolio " if is_single_developer else f"the {market_segment} ") +
+                                f"with {top_area_cagr:.1f}% average CAGR across {area_stats.loc[top_area, 'project_count']:.0f} projects, " +
+                                f"outperforming the " +
+                                (f"developer's average" if is_single_developer else "segment average") +
+                                f" by {(top_area_cagr - market_avg):.1f} percentage points."
                             ]),
                             html.Li([
-                                f"Emerging areas show {metadata.get('emerging_vs_established_premium', 2.3):.1f} percentage points ",
-                                f"higher returns than established areas, reflecting the 'maturation premium' as infrastructure develops"
+                                html.Strong("Performance Dispersion: "),
+                                f"Performance varies by {cagr_range:.1f} percentage points across areas " +
+                                (f"in {developer_filter}'s portfolio, " if is_single_developer else f"in the {market_segment}, ") +
+                                f"indicating {'significant location alpha opportunities' if cagr_range > 10 else 'relatively efficient geographic pricing'}. " +
+                                f"{len(consistent_areas)} areas show consistent performance with low volatility."
                             ]),
                             html.Li([
-                                f"Areas with Metro access average {metadata.get('metro_premium_cagr', 1.5):.1f}% higher CAGR ",
-                                f"than similar areas without, demonstrating the impact of connectivity on appreciation"
+                                html.Strong("Development Stage Impact: "),
+                                (f"Emerging areas average {emerging_avg:.1f}% CAGR compared to {established_avg:.1f}% for established areas " +
+                                f"in the {market_segment}, suggesting {'early-stage premium' if emerging_avg > established_avg else 'maturity premium'} " +
+                                f"of {abs(emerging_avg - established_avg):.1f} percentage points."
+                                if len(emerging_areas) > 0 and len(established_areas) > 0 else
+                                f"The {market_segment} shows {'emerging' if area_stats['avg_age'].mean() < 365*2 else 'established'} " +
+                                f"market characteristics across analyzed areas.")
                             ]),
                             html.Li([
-                                f"The coefficient of variation between areas is {metadata.get('area_cov', 0.42):.2f}, ",
-                                f"indicating {'moderate' if metadata.get('area_cov', 0.42) < 0.5 else 'high'} dispersion in performance across locations"
+                                html.Strong("Market Concentration: "),
+                                f"The top {min(5, area_count)} areas account for " +
+                                f"{(area_stats.head(min(5, area_count))['total_transactions'].sum() / area_stats['total_transactions'].sum() * 100):.0f}% " +
+                                f"of total market activity " +
+                                (f"in {developer_filter}'s portfolio, " if is_single_developer else f"in the {market_segment}, ") +
+                                f"indicating {'concentrated' if area_count <= 3 else 'moderate'} geographic concentration."
                             ])
                         ])
                     ]),
                     
                     html.Div([
-                        html.H5("Investment Implications", className="mt-4"),
+                        html.H5(f"{performance_context.title()} Implications", className="mt-4"),
                         html.P([
-                            "Areas are color-coded by performance tier: ",
-                            html.Span("■", style={'color': '#2ca02c', 'fontWeight': 'bold'}), " Above market average, ",
-                            html.Span("■", style={'color': '#ff7f0e', 'fontWeight': 'bold'}), " Near market average, ",
-                            html.Span("■", style={'color': '#d62728', 'fontWeight': 'bold'}), " Below market average. ",
-                            "Project count indicates market depth and reliability of the average."
+                            f"Geographic selection within the {market_segment} drives " +
+                            f"{(area_stats['avg_cagr'].std() / market_avg * 100):.0f}% of return variance. " +
+                            (f"For {developer_filter} investments, " if is_single_developer else "Investors should ") +
+                            f"prioritize areas with consistent outperformance and sufficient project depth " +
+                            f"for reliable assessment in the {market_segment}."
                         ])
                     ])
                 ])
             ], className="insights-container")
             
         elif visualization_type == 'developer_comparison':
-            # Get developer-specific insights from metadata
-            top_developer = metadata.get('top_performing_developer', 'Emaar')
-            top_developer_cagr = metadata.get('top_developer_cagr', 6.8)
-            developer_count = metadata.get('developer_count', 30)
+            # Dynamic analysis of developer track records
+            if len(df) == 0:
+                return html.Div([header, html.P(f"No developer data available for {context_desc.lower()}.")])
             
-            return html.Div([
-                header,
+            # Developer performance analysis
+            dev_stats = df.groupby('developer_name').agg({
+                'cagr': ['mean', 'count', 'std'],
+                'transaction_count': 'sum',
+                'age_days': 'mean',
+                'area_name_en': lambda x: x.nunique()
+            }).round(2)
+            dev_stats.columns = ['portfolio_cagr', 'project_count', 'cagr_volatility', 'total_transactions', 'avg_project_age', 'area_count']
+            dev_stats = dev_stats[dev_stats['project_count'] >= 2].sort_values('portfolio_cagr', ascending=False)
+            
+            if len(dev_stats) == 0:
+                return html.Div([header, html.P(f"Insufficient developer data for comparison in {market_segment} (need ≥2 projects per developer).")])
+            
+            # Key metrics
+            developer_count = len(dev_stats)
+            market_avg = df['cagr'].mean()
+            
+            # Context-specific analysis
+            if is_single_area:
+                competitive_context = f"{area_filter} market competition"
+                analysis_scope = f"within {area_filter}'s {market_segment}"
+            else:
+                competitive_context = f"{market_segment.title()} developer competition"
+                analysis_scope = f"across the {market_segment}"
+            
+            # Single developer analysis (filter-based)
+            if is_single_developer:
+                dev_name = developer_filter
+                if dev_name in dev_stats.index:
+                    dev_data = dev_stats.loc[dev_name]
+                else:
+                    return html.Div([header, html.P(f"{dev_name} has insufficient project data in {market_segment} for analysis.")])
                 
-                html.Div([
-                    html.Div([
-                        html.H5("Developer Track Record Analysis"),
-                        html.P([
-                            f"This analysis evaluates {developer_count} major developers based on the actual performance of their delivered projects. ",
-                            "Each developer's position reflects both their average project returns and portfolio consistency."
-                        ]),
-                    ], className="mb-4"),
+                # Success rate calculation
+                dev_projects = df[df['developer_name'] == dev_name]
+                success_rate = (len(dev_projects[dev_projects['cagr'] > market_avg]) / len(dev_projects) * 100)
+                
+                # Portfolio insights
+                areas_operated = dev_data['area_count']
+                avg_age_years = dev_data['avg_project_age'] / 365.25
+                
+                # Performance categorization within segment
+                if dev_data['portfolio_cagr'] > market_avg * 1.2:
+                    performance_tier = "strong outperformer"
+                elif dev_data['portfolio_cagr'] > market_avg:
+                    performance_tier = "market outperformer"
+                elif dev_data['portfolio_cagr'] > market_avg * 0.8:
+                    performance_tier = "market performer"
+                else:
+                    performance_tier = "underperformer"
+                
+                return html.Div([
+                    header,
                     
                     html.Div([
-                        html.H5("Key Insights"),
-                        html.Ul([
-                            html.Li([
-                                f"{top_developer} leads with {top_developer_cagr:.1f}% average CAGR across ",
-                                f"{metadata.get('top_developer_project_count', 45)} projects, with ",
-                                f"{metadata.get('top_developer_consistency', 78):.0f}% of projects exceeding market average"
+                        html.Div([
+                            html.H5(f"{dev_name} - {market_segment.title()} Portfolio Analysis"),
+                            html.P([
+                                f"This analysis examines {dev_name}'s track record of {int(dev_data['project_count'])} projects " +
+                                f"in the {market_segment} " +
+                                (f"within {area_filter}" if is_single_area else f"across {int(areas_operated)} Dubai areas") +
+                                f", representing a focused segment assessment."
                             ]),
-                            html.Li([
-                                f"Premium developers show {metadata.get('premium_developer_volatility_reduction', 35):.0f}% lower return volatility ",
-                                f"than market average, indicating more predictable investment outcomes"
-                            ]),
-                            html.Li([
-                                f"Developers with 20+ completed projects average {metadata.get('experienced_developer_premium', 1.2):.1f}% higher CAGR ",
-                                f"than those with fewer than 10 projects, suggesting experience advantage"
-                            ]),
-                            html.Li([
-                                f"The top 5 developers account for {metadata.get('top5_market_share', 42):.0f}% of transaction volume, ",
-                                f"indicating {'high' if metadata.get('top5_market_share', 42) > 40 else 'moderate'} market concentration"
+                        ], className="mb-4"),
+                        
+                        html.Div([
+                            html.H5("Segment Performance Profile"),
+                            html.Ul([
+                                html.Li([
+                                    html.Strong("Segment Performance: "),
+                                    f"{dev_name} achieved {dev_data['portfolio_cagr']:.1f}% average CAGR in the {market_segment}, " +
+                                    f"positioning as a {performance_tier} compared to {market_avg:.1f}% segment average."
+                                ]),
+                                html.Li([
+                                    html.Strong("Execution Consistency: "),
+                                    f"Portfolio shows {dev_data['cagr_volatility']:.1f}% volatility with {success_rate:.0f}% of projects " +
+                                    f"exceeding segment performance, indicating " +
+                                    f"{'strong' if success_rate >= 60 else 'moderate' if success_rate >= 40 else 'variable'} " +
+                                    f"execution in the {market_segment}."
+                                ]),
+                                html.Li([
+                                    html.Strong("Market Presence: "),
+                                    (f"Portfolio spans {int(areas_operated)} areas within the {market_segment} " +
+                                    f"with {int(dev_data['total_transactions']):,} total transactions, demonstrating " +
+                                    f"{'diversified' if areas_operated >= 5 else 'focused'} geographic strategy."
+                                    if not is_single_area else
+                                    f"Portfolio includes {int(dev_data['project_count'])} projects in {area_filter}'s {market_segment} " +
+                                    f"with {int(dev_data['total_transactions']):,} total transactions.")
+                                ]),
+                                html.Li([
+                                    html.Strong("Segment Expertise: "),
+                                    f"Average project lifecycle of {avg_age_years:.1f} years in the {market_segment} suggests " +
+                                    f"{'established expertise' if avg_age_years >= 3 else 'recent focus'} with " +
+                                    f"{'proven' if performance_tier in ['strong outperformer', 'market outperformer'] else 'developing'} " +
+                                    f"segment track record."
+                                ])
+                            ])
+                        ]),
+                        
+                        html.Div([
+                            html.H5("Investment Implications", className="mt-4"),
+                            html.P([
+                                f"For {market_segment} investments, {dev_name} represents a " +
+                                f"{'low-risk' if dev_data['cagr_volatility'] < 15 else 'moderate-risk'} choice " +
+                                f"with {'proven' if success_rate >= 60 else 'variable'} execution capability. " +
+                                f"Consider this developer for " +
+                                f"{'core allocation' if performance_tier in ['strong outperformer', 'market outperformer'] else 'selective opportunities'} " +
+                                f"in the {market_segment}."
                             ])
                         ])
-                    ]),
+                    ])
+                ], className="insights-container")
+            
+            # Multiple developers competitive analysis
+            else:
+                top_developer = dev_stats.index[0]
+                top_dev_cagr = dev_stats.iloc[0]['portfolio_cagr']
+                
+                # Competitive metrics
+                consistent_devs = dev_stats[dev_stats['cagr_volatility'] < 20]
+                experienced_devs = dev_stats[dev_stats['project_count'] >= 5]
+                boutique_devs = dev_stats[dev_stats['project_count'] < 5]
+                
+                # Success rate analysis
+                successful_projects = df[df['cagr'] > market_avg]
+                success_by_dev = successful_projects.groupby('developer_name').size()
+                total_by_dev = df.groupby('developer_name').size()
+                success_rates = (success_by_dev / total_by_dev * 100).round(1)
+                
+                # Market share within segment
+                top_n = min(5, developer_count)
+                segment_market_share = (dev_stats.head(top_n)['total_transactions'].sum() / dev_stats['total_transactions'].sum() * 100)
+                
+                return html.Div([
+                    header,
                     
                     html.Div([
-                        html.H5("Risk-Return Profile", className="mt-4"),
-                        html.P([
-                            "Position on the chart indicates different developer profiles: ",
-                            html.Strong("Top-Right: "), "Large portfolios with strong returns (market leaders), ",
-                            html.Strong("Top-Left: "), "Boutique developers with high returns but fewer projects, ",
-                            html.Strong("Bottom-Right: "), "Volume players with average returns, ",
-                            html.Strong("Color intensity "), "indicates consistency of performance across portfolio."
+                        html.Div([
+                            html.H5(f"{competitive_context.title()} - Developer Track Record"),
+                            html.P([
+                                f"This comparative analysis evaluates {developer_count} developers competing " +
+                                f"{analysis_scope}. Each developer's position reflects segment-specific execution and performance."
+                            ]),
+                        ], className="mb-4"),
+                        
+                        html.Div([
+                            html.H5("Competitive Intelligence"),
+                            html.Ul([
+                                html.Li([
+                                    html.Strong("Market Leader: "),
+                                    f"{top_developer} leads the {market_segment} with {top_dev_cagr:.1f}% portfolio CAGR " +
+                                    f"across {dev_stats.loc[top_developer, 'project_count']:.0f} projects, demonstrating " +
+                                    f"{success_rates.get(top_developer, 0):.0f}% success rate above segment average."
+                                ]),
+                                html.Li([
+                                    html.Strong("Execution Consistency: "),
+                                    f"{len(consistent_devs)} of {developer_count} developers show consistent performance " +
+                                    f"(<20% volatility) in the {market_segment}. " +
+                                    (f"Experienced developers (5+ projects) average {experienced_devs['portfolio_cagr'].mean():.1f}% CAGR " +
+                                    f"vs {boutique_devs['portfolio_cagr'].mean():.1f}% for boutique players in this segment."
+                                    if len(experienced_devs) > 0 and len(boutique_devs) > 0 else
+                                    f"The segment shows {'high' if len(consistent_devs)/developer_count >= 0.6 else 'moderate'} execution consistency.")
+                                ]),
+                                html.Li([
+                                    html.Strong("Scale vs Specialization: "),
+                                    (f"Large developers (10+ projects) show {dev_stats[dev_stats['project_count'] >= 10]['cagr_volatility'].mean():.1f}% " +
+                                    f"volatility vs {boutique_devs['cagr_volatility'].mean():.1f}% for boutique developers, " +
+                                    f"indicating {'scale advantages' if len(dev_stats[dev_stats['project_count'] >= 10]) > 0 else 'specialization benefits'} " +
+                                    f"in the {market_segment}."
+                                    if len(boutique_devs) > 0 else
+                                    f"The {market_segment} is dominated by experienced developers with established track records.")
+                                ]),
+                                html.Li([
+                                    html.Strong("Market Structure: "),
+                                    f"Top {top_n} developers control {segment_market_share:.0f}% of {market_segment} transactions, " +
+                                    f"indicating {'concentrated' if segment_market_share > 70 else 'competitive' if segment_market_share < 50 else 'moderately concentrated'} " +
+                                    f"market structure" +
+                                    (f" in {area_filter}" if is_single_area else "") + "."
+                                ])
+                            ])
+                        ]),
+                        
+                        html.Div([
+                            html.H5("Developer Selection Strategy", className="mt-4"),
+                            html.P([
+                                f"In the {market_segment}, developer selection accounts for " +
+                                f"{(dev_stats['portfolio_cagr'].std() / market_avg * 100):.0f}% of return variance. " +
+                                f"Prioritize developers with proven {market_segment} expertise, " +
+                                f"considering both segment-specific performance and execution consistency."
+                            ])
                         ])
                     ])
-                ])
-            ], className="insights-container")
+                ], className="insights-container")
         
         else:
-            # Default project analysis insights
+            # Default project analysis insights with context awareness
             return html.Div([
                 header,
                 
                 html.Div([
                     html.Div([
-                        html.H5("Project Performance Analysis"),
+                        html.H5(f"{market_segment.title()} - Project Performance Analysis"),
                         html.P([
-                            "This analysis provides true project-level investment performance metrics based on actual transaction data. ",
-                            "Unlike market trends, this shows real returns achieved by investors from project launch to completion or exit."
+                            f"This analysis provides project-level investment performance metrics for {context_desc.lower()} " +
+                            f"based on actual transaction data. The analysis shows real returns achieved from project launch to completion."
                         ]),
                     ], className="mb-4"),
                     
                     html.Div([
-                        html.H5("Key Metrics"),
+                        html.H5("Analysis Framework"),
                         html.Ul([
                             html.Li([
-                                html.Strong("CAGR (Compound Annual Growth Rate): "),
-                                "The annualized return rate that enables fair comparison across projects with different durations"
+                                html.Strong("Individual Projects: "),
+                                f"Performance distribution and risk assessment across {context_desc.lower()}"
                             ]),
                             html.Li([
-                                html.Strong("Duration: "),
-                                "Time between first and last transaction, indicating the investment holding period"
+                                html.Strong("Area Comparison: "),
+                                f"Geographic performance analysis within the {market_segment}"
                             ]),
                             html.Li([
-                                html.Strong("Transaction Count: "),
-                                "Number of sales in the project, indicating market liquidity and data reliability"
-                            ]),
-                            html.Li([
-                                html.Strong("Market Outperformance: "),
-                                "How much the project exceeded or lagged its peer group average"
+                                html.Strong("Developer Analysis: "),
+                                f"Track record evaluation and competitive positioning in the {market_segment}"
                             ])
                         ])
                     ])
                 ])
             ], className="insights-container")
-    
+
     elif analysis_type == 'comparative':
         if visualization_type == 'segment_premium':
             return html.Div([

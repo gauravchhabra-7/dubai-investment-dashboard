@@ -67,11 +67,15 @@ class EnvironmentConfig:
     
     # Standard file paths
     DEFAULT_PATHS = {
-        'launch_completion_data': os.path.join(DATA_DIR, 'data/df_launch_completion_analysis.csv'),
+        #'launch_completion_data': os.path.join(DATA_DIR, 'data/df_launch_completion_analysis.csv'),
+        'project_txn_data': os.path.join(DATA_DIR, 'project_txn.csv'),
         'geojson_file': os.path.join(DATA_DIR, 'complete_community_with_csv_names.geojson'),
         'dashboard_data': os.path.join(DATA_DIR, 'dashboard_merging_2.csv'),
         'processed_data': os.path.join(OUTPUT_DIR, 'processed_data.csv'),
-        'dataset_info': os.path.join(OUTPUT_DIR, 'dataset_info.json')
+        'dataset_info': os.path.join(OUTPUT_DIR, 'dataset_info.json'),
+        'project_analysis_output': os.path.join(OUTPUT_DIR, 'project_txn_analysis.csv'),
+        'area_analysis_output': os.path.join(OUTPUT_DIR, 'area_txn_analysis.csv'),
+        'developer_analysis_output': os.path.join(OUTPUT_DIR, 'developer_txn_analysis.csv')
     }
     
     @classmethod

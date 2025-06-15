@@ -24,7 +24,12 @@ except ImportError as e:
     has_investment_analysis = False
 
 try:
-    from scripts.project_analysis import prepare_project_data
+    from scripts.project_analysis import (
+        prepare_project_data,
+        aggregate_to_area_level, 
+        aggregate_to_developer_level,
+        get_all_project_metrics
+    )
     has_project_analysis = True
 except ImportError as e:
     print(f"Warning: Project analysis import error: {e}")
@@ -91,7 +96,7 @@ def run_analysis():
     output_dir = ensure_output_dir()
     
     # Check for date columns and fix if needed
-    date_columns = ['project_start_date', 'completion_date']
+    date_columns = ['projected_completion_date', 'project_announcement_date', 'project_start_date', 'completion_date']
     for col in date_columns:
         if col in df.columns:
             if df[col].dtype != 'datetime64[ns]':
@@ -176,31 +181,34 @@ def run_analysis():
         except Exception as e:
             print(f"Error in geographic analysis: {e}")
         
-    # 3. Project Analysis (replacing Launch to Completion)
+    # 3. Project Analysis (NEW TRANSACTION-BASED IMPLEMENTATION)
     if has_project_analysis:
-        print("\nPerforming project analysis...")
+        print("\nPerforming transaction-based project analysis...")
         try:
-            # Load the new project dataset
-            project_data_path = get_path('launch_completion_data')
-            if not os.path.exists(project_data_path):
-                # Try alternative path
-                project_data_path = os.path.join(os.path.dirname(data_path), 'df_launch_completion_analysis.csv')
+            # The prepare_project_data function now handles loading project_txn.csv internally
+            enhanced_project_df = prepare_project_data()
             
-            if os.path.exists(project_data_path):
-                print(f"Loading project data from {project_data_path}")
-                project_df = pd.read_csv(project_data_path)
-                print(f"Loaded {len(project_df)} project segments")
-                
-                # Enhance the project data
-                enhanced_project_df = prepare_project_data(project_df)
-                print(f"Enhanced project data with peer volatility and market outperformance metrics")
-                
-                # Save the enhanced data
-                output_path = os.path.join(output_dir, 'launch_completion.csv')
+            if len(enhanced_project_df) > 0:
+                # Save the main project analysis file
+                output_path = os.path.join(output_dir, 'project_txn_analysis.csv')
                 enhanced_project_df.to_csv(output_path, index=False)
-                print(f"Saved enhanced project data with {len(enhanced_project_df)} project segments")
+                print(f"Saved project analysis with {len(enhanced_project_df)} projects")
                 
-                # Additional analysis by property type
+                # Generate and save area-level aggregations
+                area_summary = aggregate_to_area_level(enhanced_project_df)
+                if len(area_summary) > 0:
+                    area_path = os.path.join(output_dir, 'area_txn_analysis.csv')
+                    area_summary.to_csv(area_path, index=False)
+                    print(f"Saved area analysis with {len(area_summary)} areas")
+                
+                # Generate and save developer-level aggregations
+                developer_summary = aggregate_to_developer_level(enhanced_project_df)
+                if len(developer_summary) > 0:
+                    developer_path = os.path.join(output_dir, 'developer_txn_analysis.csv')
+                    developer_summary.to_csv(developer_path, index=False)
+                    print(f"Saved developer analysis with {len(developer_summary)} developers")
+                
+                # Additional analysis by property type (keeping for dashboard compatibility)
                 for prop_type in enhanced_project_df['property_type_en'].unique():
                     prop_df = enhanced_project_df[enhanced_project_df['property_type_en'] == prop_type]
                     if len(prop_df) >= 10:  # Only save if meaningful sample size
@@ -208,11 +216,19 @@ def run_analysis():
                         prop_df.to_csv(prop_path, index=False)
                         print(f"  - Saved {prop_type} project analysis with {len(prop_df)} projects")
             else:
-                print(f"Project data file not found at {project_data_path}")
-                print("Skipping project analysis")
+                print("No projects with sufficient data for analysis")
+                
         except Exception as e:
             print(f"Error in project analysis: {e}")
             traceback.print_exc()
+
+    # Pre-calculate all project metrics for caching
+    if has_project_analysis:
+        try:
+            print("Pre-calculating project metrics for performance...")
+            get_all_project_metrics(force_refresh=True)
+        except Exception as e:
+            print(f"Error pre-calculating metrics: {e}")
     
     # 4. Micro-Segmentation Analysis (New)
     if has_segmentation_analysis:
@@ -330,7 +346,28 @@ def run_analysis():
             print(f"Error in time series analysis: {e}")
             traceback.print_exc()
 
+    # Summary
+    print("\n" + "=" * 60)
+    print("Analysis Pipeline Complete")
+    print("=" * 60)
+    
+    # Count output files
+    output_files = [f for f in os.listdir(output_dir) if f.endswith('.csv')]
+    print(f"Generated {len(output_files)} analysis files in {output_dir}")
+    
+    for file in sorted(output_files):
+        file_path = os.path.join(output_dir, file)
+        try:
+            file_df = pd.read_csv(file_path)
+            print(f"  - {file}: {len(file_df):,} rows")
+        except:
+            print(f"  - {file}: (could not read)")
+    
     return True
 
 if __name__ == "__main__":
-    run_analysis()
+    success = run_analysis()
+    if success:
+        print("\n✅ Analysis completed successfully")
+    else:
+        print("\n❌ Analysis failed - check error messages above")
