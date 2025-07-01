@@ -1,0 +1,22 @@
+[build]
+command = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "gunicorn app:server --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+
+[env]
+PORT = { default = "8080" }
+PYTHONPATH = { default = "." }
+DUBAI_DASHBOARD_ENV = { default = "production" }
+DUBAI_DASHBOARD_DEBUG = { default = "false" }
+DUBAI_DASHBOARD_ENABLE_CACHING = { default = "true" }
+DUBAI_DASHBOARD_USE_PRECOMPUTED = { default = "true" }
+DUBAI_DASHBOARD_LOG_LEVEL = { default = "INFO" }
+
+# Data paths for Railway (will be set via Railway dashboard)
+# DUBAI_DASHBOARD_DATA_DIR = "/app/data"
+# DUBAI_DASHBOARD_OUTPUT_DIR = "/app/output"
+# DUBAI_DASHBOARD_LARGE_DATA_DIR = "/app/volumes/large_data"
