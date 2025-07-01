@@ -37,8 +37,23 @@ data/df_launch_completion_analysis.csv
 data/*.kml
 data/*.csv
 
+# Large data files (these should be uploaded to Railway volumes)
+large_data/
+*.parquet
+*.h5
+*.hdf5
+
 # But include processed output folder
 !output/
+
+# Railway-specific
+.railway/
+railway.log
+
+# Deployment configs for other platforms
+render.yaml
+netlify.toml
+vercel.json
 
 # IDEs
 .vscode/
@@ -58,6 +73,16 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Remove the redirect file
 index.html
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
