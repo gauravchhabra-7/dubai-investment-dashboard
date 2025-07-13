@@ -146,6 +146,33 @@ except Exception as e:
 print("Loading data for dashboard...")
 df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df = load_processed_data()
 
+# TEMPORARY DEBUG CODE
+print("\n" + "="*50)
+print("VOLUME DEBUG")
+print("="*50)
+import os
+
+# Check volume environment variables
+print(f"RAILWAY_VOLUME_MOUNT_PATH: {os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')}")
+
+# Check what's actually in /app
+if os.path.exists("/app"):
+    print(f"/app contents: {os.listdir('/app')}")
+
+# Check volumes directory
+if os.path.exists("/app/volumes"):
+    print(f"/app/volumes contents: {os.listdir('/app/volumes')}")
+    if os.path.exists("/app/volumes/data"):
+        print(f"/app/volumes/data contents: {os.listdir('/app/volumes/data')}")
+
+# Search for the CSV file
+print("Searching for project_txn.csv...")
+for root, dirs, files in os.walk("/app"):
+    for file in files:
+        if "project_txn" in file.lower():
+            print(f"Found: {os.path.join(root, file)}")
+print("="*50)
+
 if df is None:
     # Create a minimal dataframe with required columns
     df = pd.DataFrame({
