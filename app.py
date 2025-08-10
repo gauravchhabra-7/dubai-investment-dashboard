@@ -1,14 +1,5 @@
 import os
 import sys
-
-# Fix the import path for scripts directory and config FIRST
-# This must happen before other imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-# Always add parent directory to path
-sys.path.insert(0, parent_dir)
-
-# Now we can import modules from parent directory
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
@@ -18,13 +9,13 @@ import json
 # Import from enhanced config module
 from config import get_path, OUTPUT_DIR, IS_PRODUCTION, ENVIRONMENT, REQUIRED_COLUMNS
 
-# Now import from scripts
+# Import from scripts
 from scripts.data_loader import load_data
 
 # Initialize Dash app with suppress_callback_exceptions=True
 app = dash.Dash(__name__, 
                 external_stylesheets=[dbc.themes.BOOTSTRAP],
-                suppress_callback_exceptions=True)  # Added suppress_callback_exceptions
+                suppress_callback_exceptions=True)
 app.title = "Dubai Real Estate Analysis Dashboard"
 
 server = app.server
@@ -39,7 +30,6 @@ def load_processed_data(fallback_to_raw=True):
     Returns:
         tuple: (df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df)
     """
-    # Try to load processed data from parent directory if we're in dashboard/
     output_dir = OUTPUT_DIR
     processed_path = get_path('processed_data')
     
@@ -54,37 +44,34 @@ def load_processed_data(fallback_to_raw=True):
         comparative_df = None
         time_series_df = None
         
-        geo_path = os.path.join(output_dir, 'geographic_analysis.csv')
-        if os.path.exists(geo_path):
-            try:
+        # Try to load geographic data if available
+        try:
+            geo_path = os.path.join(output_dir, 'geographic_analysis.csv')
+            if os.path.exists(geo_path):
                 geo_df = pd.read_csv(geo_path)
                 print(f"Loaded geographic data ({len(geo_df)} areas)")
-            except Exception as e:
-                print(f"Error loading geographic data: {e}")
-        
-        # FIXED: Load project analysis data with correct column names
-        launch_path = os.path.join(output_dir, 'project_txn_analysis.csv')
-        if os.path.exists(launch_path):
+        except Exception as e:
+            print(f"Error loading geographic data: {e}")
+            
+        # Try to load project analysis data if available
+        if os.path.exists(output_dir):
             try:
-                launch_completion_df = pd.read_csv(launch_path)
+                # Check for project analysis files
+                project_files = ['project_analysis_apartment.csv', 'project_analysis_villa.csv', 'project_txn_analysis.csv']
+                project_data_frames = []
                 
-                # Convert NEW project analysis date columns to datetime
-                # These are the actual column names from our new project_analysis.py
-                date_cols = ['first_window_start', 'first_window_end',
-                            'recent_window_start', 'recent_window_end']
+                for file in project_files:
+                    file_path = os.path.join(output_dir, file)
+                    if os.path.exists(file_path):
+                        temp_df = pd.read_csv(file_path)
+                        project_data_frames.append(temp_df)
+                        print(f"Loaded {file} ({len(temp_df)} records)")
                 
-                for col in date_cols:
-                    if col in launch_completion_df.columns:
-                        launch_completion_df[col] = pd.to_datetime(launch_completion_df[col], errors='coerce')
-                        
-                print(f"Loaded project analysis data ({len(launch_completion_df)} projects)")
-                
-                # Display summary of loaded data for debugging
-                if len(launch_completion_df) > 0:
-                    print(f"   - Projects with valid CAGR: {launch_completion_df['cagr'].notna().sum()}")
-                    print(f"   - Early stage projects: {launch_completion_df['is_early_launch'].sum()}")
-                    print(f"   - Projects with thin data: {launch_completion_df['is_thin'].sum()}")
-                    print(f"   - Projects needing review: {launch_completion_df['needs_review'].sum()}")
+                if project_data_frames:
+                    launch_completion_df = pd.concat(project_data_frames, ignore_index=True)
+                    print(f"Combined project analysis data: {len(launch_completion_df)} total records")
+                    print(f"CAGR range: {launch_completion_df['cagr'].min():.1f}% to {launch_completion_df['cagr'].max():.1f}%")
+                    print(f"Projects with positive CAGR: {(launch_completion_df['cagr'] > 0).sum()}")
                     
             except Exception as e:
                 print(f"Error loading project analysis data: {e}")
@@ -123,11 +110,10 @@ def load_processed_data(fallback_to_raw=True):
     elif fallback_to_raw:
         # Fall back to raw data
         print("Processed data not found, trying to load raw data...")
-        data_dir = os.path.join(parent_dir, 'data') if current_dir.endswith('dashboard') else 'data'
-        raw_path = os.path.join(data_dir, 'dashboard_merging_2.csv')
+        data_dir = get_path('dashboard_data')
         
-        if os.path.exists(raw_path):
-            df = load_data(raw_path)
+        if os.path.exists(data_dir):
+            df = load_data(data_dir)
             
             # Attempt to load geographic data
             geo_df = None
@@ -138,7 +124,7 @@ def load_processed_data(fallback_to_raw=True):
             
             return df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df
         else:
-            print(f"Raw data not found at {raw_path}")
+            print(f"Raw data not found at {data_dir}")
             return None, None, None, None, None, None
     else:
         print(f"Processed data not found at {processed_path}")
@@ -146,7 +132,7 @@ def load_processed_data(fallback_to_raw=True):
 
 # Load dataset info if available
 dataset_info = {}
-info_path = os.path.join(parent_dir, 'output', 'dataset_info.json') if current_dir.endswith('dashboard') else 'output/dataset_info.json'
+info_path = get_path('dataset_info')
 try:
     if os.path.exists(info_path):
         with open(info_path, 'r') as f:
@@ -159,6 +145,33 @@ except Exception as e:
 # Load data
 print("Loading data for dashboard...")
 df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df = load_processed_data()
+
+# TEMPORARY DEBUG CODE
+print("\n" + "="*50)
+print("VOLUME DEBUG")
+print("="*50)
+import os
+
+# Check volume environment variables
+print(f"RAILWAY_VOLUME_MOUNT_PATH: {os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')}")
+
+# Check what's actually in /app
+if os.path.exists("/app"):
+    print(f"/app contents: {os.listdir('/app')}")
+
+# Check volumes directory
+if os.path.exists("/app/volumes"):
+    print(f"/app/volumes contents: {os.listdir('/app/volumes')}")
+    if os.path.exists("/app/volumes/data"):
+        print(f"/app/volumes/data contents: {os.listdir('/app/volumes/data')}")
+
+# Search for the CSV file
+print("Searching for project_txn.csv...")
+for root, dirs, files in os.walk("/app"):
+    for file in files:
+        if "project_txn" in file.lower():
+            print(f"Found: {os.path.join(root, file)}")
+print("="*50)
 
 if df is None:
     # Create a minimal dataframe with required columns
@@ -186,7 +199,7 @@ else:
     print("=====================================\n")
 
 # Check for asset directories and create if needed
-asset_dir = os.path.join(current_dir, 'assets') if current_dir.endswith('dashboard') else 'assets'
+asset_dir = 'assets'
 if not os.path.exists(asset_dir):
     os.makedirs(asset_dir, exist_ok=True)
     print(f"Created assets directory at {asset_dir}")
@@ -194,37 +207,27 @@ if not os.path.exists(asset_dir):
 # Import dashboard components
 try:
     from dashboard.layouts import create_layout
-    app.layout = create_layout(df)  # Pass df to create_layout
+    app.layout = create_layout(df)
 except ImportError as e:
-    # Try relative import if we're in the dashboard directory
-    try:
-        from layouts import create_layout
-        app.layout = create_layout(df)  # Pass df to create_layout
-    except ImportError as e2:
-        print(f"Error importing layout: {e2}")
-        # Create a basic layout if the import fails
-        app.layout = html.Div([
-            html.H1("Dubai Real Estate Dashboard"),
-            html.P("Error loading dashboard layout. Please check your installation."),
-            html.Pre(str(e2))
-        ])
+    print(f"Error importing layout: {e}")
+    # Create a basic layout if the import fails
+    app.layout = html.Div([
+        html.H1("Dubai Real Estate Dashboard"),
+        html.P("Error loading dashboard layout. Please check your installation."),
+        html.Pre(str(e))
+    ])
 
 # Import and register callbacks
 try:
     from dashboard.callbacks import register_callbacks
     register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df)
 except ImportError as e:
-    # Try relative import if we're in the dashboard directory
-    try:
-        from callbacks import register_callbacks
-        register_callbacks(app, df, geo_df, launch_completion_df, micro_segment_df, comparative_df, time_series_df)
-    except ImportError as e2:
-        print(f"Error importing callbacks: {e2}")
-        print("Dashboard will have limited interactivity")
+    print(f"Error importing callbacks: {e}")
+    print("Dashboard will have limited interactivity")
 
 # Run the app
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 8050))
+    port = int(os.environ.get("PORT", 8080))
     debug = not IS_PRODUCTION
     
     print("\n" + "=" * 60)

@@ -37,6 +37,9 @@ data/df_launch_completion_analysis.csv
 data/*.kml
 data/*.csv
 
+# Allow specific parquet files for Git LFS
+!data/project_txn.parquet
+
 # But include processed output folder
 !output/
 
@@ -60,4 +63,5 @@ Thumbs.db
 *.log
 
 # Remove the redirect file
-index.html
+index.htmlrender-test-env/
+render-test-env/

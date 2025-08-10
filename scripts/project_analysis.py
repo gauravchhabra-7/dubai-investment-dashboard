@@ -56,7 +56,7 @@ def load_transaction_data():
             raise FileNotFoundError(f"Transaction data not found at: {data_path}")
         
         print(f"Loading transaction data from: {data_path}")
-        df = pd.read_csv(data_path)
+        df = pd.read_parquet(data_path)
         
         # Smart date parsing
         df['instance_date'] = pd.to_datetime(df['instance_date'], errors='coerce')
